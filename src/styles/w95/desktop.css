@@ -1,0 +1,427 @@
+/* ---- Desktop root ---- */
+
+.w95-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--w95-desktop);
+  font-family: var(--font-w95);
+  font-size: 11px;
+  user-select: none;
+  -webkit-font-smoothing: none;
+  /* W95 pixel arrow cursor — outlined black, white fill, sharp edges */
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='22' shape-rendering='crispEdges'><path d='M1 1 L1 16 L5 12 L7 17 L9 16 L7 11 L12 11 Z' fill='white' stroke='black' stroke-width='1.2' stroke-linejoin='miter'/></svg>") 1 1, default;
+}
+
+/* link / button cursor — the pointing-hand W95 used for clickables */
+.w95-root .w95-titlebar-btn,
+.w95-root .w95-btn,
+.w95-root .w95-start,
+.w95-root .w95-chip,
+.w95-root .w95-tray-icon,
+.w95-root .w95-menu-item:not(.disabled),
+.w95-root .w95-icon,
+.w95-root .w95-titlebar {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='22' shape-rendering='crispEdges'><path d='M5 11 L5 4 L7 4 L7 9 L8 9 L8 2 L10 2 L10 9 L11 9 L11 3 L13 3 L13 10 L14 10 L14 6 L16 6 L16 14 L13 19 L5 19 Z' fill='white' stroke='black' stroke-width='1.2' stroke-linejoin='miter'/></svg>") 6 1, pointer;
+}
+
+/* Wallpaper variants — applied via [data-wallpaper] attribute on .w95-root */
+.w95-root[data-wallpaper="teal"]    { background: #008080; }
+.w95-root[data-wallpaper="purple"]  { background: linear-gradient(135deg, #c084fc 0%, #22d3ee 100%); }
+.w95-root[data-wallpaper="vapor"]   { background: linear-gradient(180deg, #ff79c6 0%, #bd93f9 50%, #8be9fd 100%); }
+.w95-root[data-wallpaper="hotdog"]  { background: linear-gradient(180deg, #ff2d00 0%, #ff2d00 50%, #ffe600 50%, #ffe600 100%); }
+.w95-root[data-wallpaper="plasma"]  {
+  background:
+    radial-gradient(circle at 20% 30%, #4040c0 0%, transparent 40%),
+    radial-gradient(circle at 80% 20%, #008080 0%, transparent 40%),
+    radial-gradient(circle at 60% 80%, #800080 0%, transparent 40%),
+    #0a0a3a;
+}
+
+/* ---- Sticky note pinned on the wallpaper ---- */
+
+.w95-sticky {
+  position: absolute;
+  right: 24px;
+  top: 24px;
+  width: 170px;
+  min-height: 130px;
+  padding: 26px 14px 14px;
+  background: linear-gradient(180deg, #fff58a 0%, #ffe54f 100%);
+  color: #2a2a18;
+  font-family: "Marker Felt", "Comic Sans MS", "Bradley Hand", cursive;
+  font-size: 13px;
+  line-height: 1.35;
+  transform: rotate(-3deg);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 6px 14px rgba(0, 0, 0, 0.35),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+.w95-sticky::before {
+  /* tape strip across the top */
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 70px;
+  height: 18px;
+  transform: translateX(-50%) rotate(2deg);
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.w95-sticky strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.w95-sticky .wave {
+  display: inline-block;
+  animation: w95-wave 2s ease-in-out infinite;
+  transform-origin: 70% 70%;
+}
+
+@keyframes w95-wave {
+  0%, 60%, 100% { transform: rotate(0); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  30% { transform: rotate(14deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+}
+
+/* ---- Display Properties dialog ---- */
+
+.w95-display-props {
+  width: 460px;
+  max-width: 92vw;
+}
+
+.w95-display-props-body {
+  padding: 14px;
+  font-size: 11px;
+}
+
+.w95-display-props-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.w95-display-preview {
+  flex: none;
+  width: 140px;
+  height: 96px;
+  background: #c0c0c0;
+  box-shadow:
+    inset -1px -1px var(--w95-face-light),
+    inset 1px 1px var(--w95-shadow),
+    inset -2px -2px #fff,
+    inset 2px 2px var(--w95-dark);
+  padding: 6px;
+  position: relative;
+}
+
+.w95-display-preview-screen {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.w95-display-preview-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: #c0c0c0;
+}
+
+.w95-display-list {
+  flex: 1;
+  min-width: 0;
+  height: 130px;
+  background: #fff;
+  overflow-y: auto;
+  box-shadow:
+    inset -1px -1px #fff,
+    inset 1px 1px var(--w95-shadow),
+    inset -2px -2px var(--w95-face-light),
+    inset 2px 2px var(--w95-dark);
+}
+
+.w95-display-list-item {
+  padding: 3px 8px;
+  cursor: default;
+}
+
+.w95-display-list-item.selected {
+  background: var(--w95-title-a);
+  color: #fff;
+}
+
+/* ---- BSOD (triggered by spam-closing windows) ---- */
+
+.w95-bsod {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #0000aa;
+  color: #fff;
+  font-family: "W95FA", "MS Sans Serif", "Lucida Console", "Courier New", monospace;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 6vh 10vw;
+  cursor: none;
+  user-select: none;
+  -webkit-font-smoothing: none;
+}
+
+.w95-bsod-inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.w95-bsod-banner {
+  display: inline-block;
+  background: #c0c0c0;
+  color: #0000aa;
+  font-weight: 700;
+  padding: 0 14px;
+  margin: 0 auto 24px;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.w95-bsod-inner {
+  text-align: center;
+}
+
+.w95-bsod-inner p {
+  text-align: left;
+  margin: 0 0 18px;
+  white-space: pre-wrap;
+}
+
+.w95-bsod-prompt {
+  text-align: center !important;
+  margin-top: 26px !important;
+  animation: w95-bsod-blink 1.1s steps(1) infinite;
+}
+
+@keyframes w95-bsod-blink {
+  0%, 50%   { opacity: 1; }
+  51%, 100% { opacity: 0.35; }
+}
+
+/* ---- Chaos mode (FollowTheWhiteRabbit) — all windows fall + break ---- */
+
+.w95-root.chaos .w95-window {
+  animation: w95-window-fall 1.6s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+  pointer-events: none;
+}
+
+.w95-root.chaos .w95-titlebar-btn,
+.w95-root.chaos .w95-rs {
+  pointer-events: none;
+}
+
+@keyframes w95-window-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  35% {
+    transform: translateY(8px) rotate(-2deg);
+  }
+  100% {
+    transform: translateY(120vh) rotate(28deg);
+    opacity: 0.85;
+  }
+}
+
+/* ---- Glitch / datamosh overlay (toggled by Datamosh app) ---- */
+
+.w95-root.glitch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 0, 80, 0.18) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(0deg, rgba(0, 200, 255, 0.18) 0 1px, transparent 1px 3px);
+  background-position: 0 0, 1px 0;
+  mix-blend-mode: screen;
+  animation: w95-glitch 0.15s steps(2) infinite;
+  z-index: 9000;
+}
+
+@keyframes w95-glitch {
+  0%   { transform: translate(0, 0); filter: hue-rotate(0deg); }
+  25%  { transform: translate(2px, -1px); filter: hue-rotate(15deg); }
+  50%  { transform: translate(-3px, 1px); filter: hue-rotate(-15deg); }
+  75%  { transform: translate(1px, 2px); filter: hue-rotate(30deg); }
+  100% { transform: translate(0, 0); filter: hue-rotate(0deg); }
+}
+
+/* ---- Desktop icons ---- */
+
+.w95-icon {
+  position: absolute;
+  width: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+.w95-icon-label {
+  max-width: 76px;
+  color: #fff;
+  font-size: 11px;
+  text-align: center;
+  line-height: 1.25;
+  padding: 1px 3px;
+}
+
+.w95-icon.selected .w95-icon-label {
+  background: var(--w95-title-a);
+  outline: 1px dotted #fff;
+  outline-offset: -1px;
+}
+
+/* ---- Boot screen ---- */
+
+.w95-boot {
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.6s ease;
+  font-family: var(--font-w95);
+}
+
+.w95-boot.fade {
+  opacity: 0;
+}
+
+.w95-boot-title {
+  color: #fff;
+  font-size: 30px;
+  font-weight: 700;
+  margin-top: 28px;
+  letter-spacing: 1px;
+}
+
+.w95-boot-sub {
+  color: #b5b5b5;
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+.w95-boot-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 14px;
+  background: #000;
+  overflow: hidden;
+}
+
+.w95-boot-bar-inner {
+  height: 100%;
+  width: 30%;
+  background: linear-gradient(90deg, #0000a8, #00a8a8, #0000a8);
+  animation: w95boot 1.2s linear infinite;
+}
+
+@keyframes w95boot {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(433%); }
+}
+
+/* ---- Shutdown screens ---- */
+
+.w95-shutdown {
+  position: fixed;
+  inset: 0;
+  z-index: 9980;
+  background: #000;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-w95);
+  text-align: center;
+}
+
+.w95-shutdown-wait {
+  color: #fff;
+  font-size: 20px;
+}
+
+.w95-shutdown-off {
+  color: #ffa500;
+  font-size: 28px;
+  font-weight: 700;
+  padding: 0 24px;
+  line-height: 1.5;
+}
+
+.w95-shutdown-hint {
+  display: block;
+  color: #707070;
+  font-size: 12px;
+  font-weight: 400;
+  margin-top: 18px;
+}
+
+/* ---- Context menu ---- */
+
+.w95-context {
+  position: absolute;
+  width: 180px;
+  background: var(--w95-face);
+  box-shadow:
+    inset -1px -1px var(--w95-dark),
+    inset 1px 1px var(--w95-face-light),
+    inset -2px -2px var(--w95-shadow),
+    inset 2px 2px #fff;
+  padding: 3px;
+  z-index: 8200;
+}
+
+.w95-context .w95-menu-item {
+  height: 24px;
+}
+
+.w95-context .w95-menu-item.disabled {
+  color: var(--w95-shadow);
+  text-shadow: 1px 1px 0 #fff;
+}
+
+.w95-context .w95-menu-item.disabled:hover {
+  background: none;
+  color: var(--w95-shadow);
+}
+
+/* ---- Brightness overlay ---- */
+
+.w95-dim {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+  z-index: 10000;
+}

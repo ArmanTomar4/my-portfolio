@@ -1,0 +1,75 @@
+.ios-statusbar {
+  flex: none;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: #fff;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.25) 100%);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
+  z-index: 5;
+}
+
+.ios-statusbar-left,
+.ios-statusbar-right {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ios-signal {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 10px;
+}
+
+.ios-signal-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.ios-signal-dot.off {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.ios-carrier {
+  margin-left: 2px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ios-battery {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.ios-battery-body {
+  width: 22px;
+  height: 10px;
+  border: 1px solid #fff;
+  border-radius: 2px;
+  position: relative;
+  padding: 1px;
+}
+
+.ios-battery-fill {
+  height: 100%;
+  background: #fff;
+  border-radius: 1px;
+}
+
+.ios-battery-tip {
+  width: 2px;
+  height: 4px;
+  background: #fff;
+  border-radius: 0 1px 1px 0;
+}

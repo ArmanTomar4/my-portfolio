@@ -1,10 +1,10 @@
-import { AppDefinition } from '@/types'
+﻿import { AppDefinition } from '@/types'
 
 export const apps: AppDefinition[] = [
   {
     id: 'my-computer',
     label: 'My Computer',
-    icon: '/icons/my-computer.png',
+    icon: 'my-computer',
     component: () => import('./MyComputer/App'),
     defaultSize: { width: 640, height: 480 },
     defaultPosition: { x: 120, y: 80 },
@@ -13,7 +13,7 @@ export const apps: AppDefinition[] = [
   {
     id: 'notepad',
     label: 'About Me',
-    icon: '/icons/notepad.png',
+    icon: 'notepad',
     component: () => import('./Notepad/App'),
     defaultSize: { width: 520, height: 380 },
     defaultPosition: { x: 160, y: 100 },
@@ -22,7 +22,7 @@ export const apps: AppDefinition[] = [
   {
     id: 'outlook',
     label: 'Contact',
-    icon: '/icons/outlook.png',
+    icon: 'outlook',
     component: () => import('./Outlook/App'),
     defaultSize: { width: 560, height: 420 },
     defaultPosition: { x: 200, y: 120 },
@@ -31,7 +31,7 @@ export const apps: AppDefinition[] = [
   {
     id: 'internet-explorer',
     label: 'Links',
-    icon: '/icons/ie.png',
+    icon: 'ie',
     component: () => import('./InternetExplorer/App'),
     defaultSize: { width: 640, height: 480 },
     defaultPosition: { x: 140, y: 90 },
@@ -40,7 +40,7 @@ export const apps: AppDefinition[] = [
   {
     id: 'terminal',
     label: 'Terminal',
-    icon: '/icons/terminal.png',
+    icon: 'terminal',
     component: () => import('./Terminal/App'),
     defaultSize: { width: 500, height: 340 },
     defaultPosition: { x: 180, y: 110 },
@@ -49,7 +49,7 @@ export const apps: AppDefinition[] = [
   {
     id: 'paint',
     label: 'Skills',
-    icon: '/icons/paint.png',
+    icon: 'paint',
     component: () => import('./Paint/App'),
     defaultSize: { width: 600, height: 460 },
     defaultPosition: { x: 130, y: 85 },
@@ -58,7 +58,7 @@ export const apps: AppDefinition[] = [
   {
     id: 'winamp',
     label: 'WinAMP',
-    icon: '/icons/winamp.png',
+    icon: 'winamp',
     component: () => import('./WinAMP/App'),
     defaultSize: { width: 280, height: 420 },
     defaultPosition: { x: 80, y: 60 },
@@ -67,7 +67,7 @@ export const apps: AppDefinition[] = [
   {
     id: 'minesweeper',
     label: 'Minesweeper',
-    icon: '/icons/minesweeper.png',
+    icon: 'minesweeper',
     component: () => import('./Minesweeper/App'),
     defaultSize: { width: 360, height: 400 },
     defaultPosition: { x: 220, y: 130 },
@@ -76,7 +76,7 @@ export const apps: AppDefinition[] = [
   {
     id: 'snake',
     label: 'Snake',
-    icon: '/icons/snake.png',
+    icon: 'snake',
     component: () => import('./Snake/App'),
     defaultSize: { width: 340, height: 380 },
     defaultPosition: { x: 240, y: 140 },
@@ -85,7 +85,7 @@ export const apps: AppDefinition[] = [
   {
     id: 'solitaire',
     label: 'Solitaire',
-    icon: '/icons/solitaire.png',
+    icon: 'solitaire',
     component: () => import('./Solitaire/App'),
     defaultSize: { width: 640, height: 480 },
     defaultPosition: { x: 150, y: 95 },
@@ -94,7 +94,7 @@ export const apps: AppDefinition[] = [
   {
     id: 'recycle-bin',
     label: 'Recycle Bin',
-    icon: '/icons/recycle-bin.png',
+    icon: 'recycle-bin',
     component: () => import('./RecycleBin/App'),
     defaultSize: { width: 480, height: 360 },
     defaultPosition: { x: 170, y: 105 },
@@ -103,7 +103,7 @@ export const apps: AppDefinition[] = [
   {
     id: 'msdos',
     label: 'MS-DOS',
-    icon: '/icons/msdos.png',
+    icon: 'msdos',
     component: () => import('./MSDOS/App'),
     defaultSize: { width: 500, height: 340 },
     defaultPosition: { x: 190, y: 115 },
@@ -112,10 +112,64 @@ export const apps: AppDefinition[] = [
   {
     id: 'network-places',
     label: 'Tech Stack',
-    icon: '/icons/network.png',
+    icon: 'network',
     component: () => import('./NetworkPlaces/App'),
     defaultSize: { width: 560, height: 420 },
     defaultPosition: { x: 160, y: 100 },
     resizable: true,
+  },
+  {
+    id: 'readme',
+    label: 'README.txt',
+    icon: 'readme',
+    component: () => import('./Readme/App'),
+    defaultSize: { width: 460, height: 340 },
+    defaultPosition: { x: 220, y: 80 },
+    resizable: true,
+  },
+  {
+    id: 'antivirus',
+    label: 'Dr. Marburg Antivirus',
+    icon: 'antivirus',
+    component: () => import('./Antivirus/App'),
+    defaultSize: { width: 420, height: 320 },
+    defaultPosition: { x: 260, y: 110 },
+    resizable: false,
+  },
+  {
+    id: 'stress',
+    label: 'stress.exe',
+    icon: 'stress',
+    component: () => import('./Stress/App'),
+    defaultSize: { width: 360, height: 260 },
+    defaultPosition: { x: 200, y: 140 },
+    resizable: false,
+  },
+  {
+    id: 'donotopen',
+    label: 'DO NOT OPEN',
+    icon: 'donotopen',
+    component: () => import('./DoNotOpen/App'),
+    defaultSize: { width: 320, height: 200 },
+    defaultPosition: { x: 320, y: 180 },
+    resizable: false,
+  },
+  {
+    id: 'datamosh',
+    label: 'Datamosh',
+    icon: 'datamosh',
+    component: () => import('./Datamosh/App'),
+    defaultSize: { width: 360, height: 240 },
+    defaultPosition: { x: 280, y: 120 },
+    resizable: false,
+  },
+  {
+    id: 'rabbit',
+    label: 'FollowTheWhiteRabbit',
+    icon: 'rabbit',
+    component: () => import('./Rabbit/App'),
+    defaultSize: { width: 420, height: 320 },
+    defaultPosition: { x: 200, y: 100 },
+    resizable: false,
   },
 ]

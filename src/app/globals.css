@@ -1,26 +1,39 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Pixelated MS Sans Serif";
+  src: url("/fonts/ms_sans_serif.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pixelated MS Sans Serif";
+  src: url("/fonts/ms_sans_serif_bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --w95-face: #c0c0c0;
+  --w95-face-light: #dfdfdf;
+  --w95-shadow: #808080;
+  --w95-dark: #0a0a0a;
+  --w95-title-a: #000080;
+  --w95-title-b: #1084d0;
+  --w95-title-inactive-a: #808080;
+  --w95-title-inactive-b: #b5b5b5;
+  --w95-desktop: #008080;
+  --font-w95: "Pixelated MS Sans Serif", "MS Sans Serif", Tahoma, Geneva, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #000;
+}
+
+@keyframes w95-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }

@@ -1,0 +1,103 @@
+.ios-app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ios-app:active .ios-app-tile {
+  transform: scale(0.94);
+}
+
+.ios-app-tile {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  border-radius: 13px;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--ios-from, #5a82ff) 0%, var(--ios-to, #1f3aa8) 100%);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.08s ease;
+}
+
+/* glossy reflection in the top half — iOS 4 signature look */
+.ios-app-tile::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  border-radius: 13px 13px 50% 50% / 13px 13px 24px 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.05));
+  pointer-events: none;
+}
+
+.ios-app-glyph {
+  position: relative;
+  z-index: 1;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}
+
+.ios-app-label {
+  font-size: 10.5px;
+  line-height: 1.1;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  max-width: 68px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Wobble (edit mode) */
+.ios-home.editing .ios-app-tile {
+  animation: ios-wobble 0.22s ease-in-out infinite alternate;
+  transform-origin: 50% 50%;
+}
+
+.ios-home.editing .ios-app:nth-child(odd) .ios-app-tile {
+  animation-delay: -0.11s;
+}
+
+.ios-home.editing .ios-app .ios-app-badge {
+  display: flex;
+}
+
+.ios-app-badge {
+  display: none;
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 1px #555;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  font-size: 14px;
+  color: #555;
+  line-height: 0;
+}
+
+@keyframes ios-wobble {
+  from { transform: rotate(-1.3deg); }
+  to   { transform: rotate(1.3deg); }
+}

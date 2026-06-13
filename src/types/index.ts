@@ -14,9 +14,14 @@ export interface WindowInstance {
   title: string
   isOpen: boolean
   isMinimized: boolean
+  isMaximized: boolean
   position: { x: number; y: number }
   size: { width: number; height: number }
   zIndex: number
+  prevBounds?: {
+    position: { x: number; y: number }
+    size: { width: number; height: number }
+  }
 }
 
 export interface GuestbookMessage {

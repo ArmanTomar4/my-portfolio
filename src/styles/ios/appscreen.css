@@ -1,0 +1,130 @@
+.ios-app-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: #f2f3f5;
+  color: #111;
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.ios-app-screen.open {
+  transform: translateY(0);
+}
+
+/* When opened the status bar tints to match the app chrome below */
+.ios-app-screen .ios-statusbar {
+  background: linear-gradient(180deg, #2c2c2e 0%, #1c1c1e 100%);
+}
+
+.ios-app-titlebar {
+  flex: none;
+  position: relative;
+  height: 44px;
+  background: linear-gradient(180deg, #b9c2cc 0%, #6f7c8a 60%, #5a6675 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 16px;
+  text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.55);
+}
+
+.ios-app-back {
+  position: absolute;
+  left: 8px;
+  top: 7px;
+  height: 30px;
+  padding: 0 10px 0 18px;
+  display: flex;
+  align-items: center;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 50%),
+    linear-gradient(180deg, #5d6b7b, #3f4a59);
+  border-radius: 5px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 1px 1px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.ios-app-back::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 5px;
+  width: 20px;
+  height: 20px;
+  background: inherit;
+  transform: rotate(45deg);
+  border-radius: 4px;
+  box-shadow: inset 1px -1px 0 rgba(255, 255, 255, 0.3);
+  z-index: -1;
+}
+
+.ios-app-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 14px;
+}
+
+/* Stub content used by placeholder apps */
+.ios-app-stub {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6b7280;
+  text-align: center;
+  gap: 6px;
+}
+
+.ios-app-stub strong {
+  font-size: 18px;
+  color: #111;
+}
+
+/* Notes app — yellow legal pad */
+.ios-notes {
+  background: #fdf6c4;
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(150, 110, 0, 0) 0,
+    rgba(150, 110, 0, 0) 25px,
+    rgba(150, 110, 0, 0.22) 25px,
+    rgba(150, 110, 0, 0.22) 26px
+  );
+  font-family: "Marker Felt", "Bradley Hand", "Comic Sans MS", cursive;
+  color: #1a1a1a;
+  line-height: 26px;
+  font-size: 16px;
+  padding: 0 18px 24px;
+}
+
+.ios-notes-header {
+  position: sticky;
+  top: 0;
+  background: #c9b370;
+  color: #4a360b;
+  font-family: -apple-system, "Helvetica Neue", sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  text-align: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #8c6f30;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset;
+  margin: 0 -18px 8px;
+}

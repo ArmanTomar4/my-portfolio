@@ -1,31 +1,37 @@
-import { useRef, useCallback } from 'react'
+import { useCallback } from 'react'
 import { useWindowStore } from '@/store/windowStore'
 
-export function useDraggable(windowId: string) {
-  const updatePosition = useWindowStore((s) => s.updatePosition)
-  const focusWindow = useWindowStore((s) => s.focusWindow)
-  const dragging = useRef(false)
-  const offset = useRef({ x: 0, y: 0 })
-
+export function useDraggable(windowId: string, enabled = true) {
   const onMouseDown = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      dragging.current = true
-      offset.current = { x: e.clientX, y: e.clientY }
-      focusWindow(windowId)
+    (e: React.MouseEvent<HTMLElement>) => {
+      if (e.button !== 0) return
+      const store = useWindowStore.getState()
+      const win = store.windows.find((w) => w.id === windowId)
+      if (!win) return
+      store.focusWindow(windowId)
+      if (!enabled || win.isMaximized) return
 
-      const onMouseMove = (e: MouseEvent) => {
-        if (!dragging.current) return
-        const dx = e.clientX - offset.current.x
-        const dy = e.clientY - offset.current.y
-        offset.current = { x: e.clientX, y: e.clientY }
-        updatePosition(windowId, {
-          x: Math.max(0, dx),
-          y: Math.max(0, dy),
+      // offset of the grab point inside the title bar, so the window
+      // doesn't jump to the cursor
+      const grabX = e.clientX - win.position.x
+      const grabY = e.clientY - win.position.y
+
+      const onMouseMove = (ev: MouseEvent) => {
+        const current = useWindowStore
+          .getState()
+          .windows.find((w) => w.id === windowId)
+        if (!current) return
+        // keep at least 60px of the title bar reachable
+        const minX = -(current.size.width - 60)
+        const maxX = window.innerWidth - 60
+        const maxY = window.innerHeight - 60
+        useWindowStore.getState().updatePosition(windowId, {
+          x: Math.min(Math.max(minX, ev.clientX - grabX), maxX),
+          y: Math.min(Math.max(0, ev.clientY - grabY), maxY),
         })
       }
 
       const onMouseUp = () => {
-        dragging.current = false
         window.removeEventListener('mousemove', onMouseMove)
         window.removeEventListener('mouseup', onMouseUp)
       }
@@ -33,7 +39,7 @@ export function useDraggable(windowId: string) {
       window.addEventListener('mousemove', onMouseMove)
       window.addEventListener('mouseup', onMouseUp)
     },
-    [windowId, updatePosition, focusWindow]
+    [windowId, enabled]
   )
 
   return { onMouseDown }
