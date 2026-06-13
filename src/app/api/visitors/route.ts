@@ -1,11 +1,17 @@
 import { Redis } from '@upstash/redis'
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-})
+const url = process.env.UPSTASH_REDIS_REST_URL
+const token = process.env.UPSTASH_REDIS_REST_TOKEN
+const redis = url && token ? new Redis({ url, token }) : null
 
 export async function GET() {
-  const count = await redis.incr('visitors')
-  return Response.json({ count })
+  if (!redis) {
+    return Response.json({ count: 0, offline: true })
+  }
+  try {
+    const count = await redis.incr('visitors')
+    return Response.json({ count })
+  } catch {
+    return Response.json({ count: 0, offline: true })
+  }
 }
