@@ -41,7 +41,7 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
   const onPointerDown = (e: React.PointerEvent) => {
     const track = trackRef.current
     if (!track) return
-    track.setPointerCapture(e.pointerId)
+    e.currentTarget.setPointerCapture(e.pointerId)
     const max = track.clientWidth - 70 // thumb width + small inset
     dragState.current = { startX: e.clientX, max }
   }

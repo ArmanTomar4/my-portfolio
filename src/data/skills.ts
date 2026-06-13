@@ -6,23 +6,23 @@ export interface SkillCategory {
 
 export const skills: SkillCategory[] = [
   {
-    category: 'Frontend',
+    category: 'Programming',
     color: '#0000AA',
-    items: ['React', 'Next.js', 'TypeScript', 'JavaScript', 'HTML5', 'CSS3', 'Tailwind CSS'],
+    items: ['JavaScript', 'Python', 'C++', 'HTML', 'CSS'],
   },
   {
-    category: 'UI / Design',
+    category: 'Frontend',
     color: '#AA0000',
-    items: ['Figma', 'Responsive Design', 'CSS Animations', 'Design Systems', 'Prototyping'],
+    items: ['React.js', 'Next.js'],
   },
   {
     category: 'Backend',
     color: '#006600',
-    items: ['Node.js', 'Express', 'REST APIs', 'GraphQL', 'PostgreSQL', 'MongoDB', 'Redis'],
+    items: ['Node.js', 'Express.js', 'FastAPI', 'REST APIs'],
   },
   {
-    category: 'Tools',
+    category: 'DevOps & Cloud',
     color: '#AA6600',
-    items: ['Git', 'GitHub', 'VS Code', 'Vercel', 'Docker', 'Postman'],
+    items: ['Docker', 'Kubernetes', 'Redis', 'AWS (EC2, EKS)', 'GCP', 'Git', 'GitHub'],
   },
 ]
