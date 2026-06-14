@@ -265,6 +265,126 @@ export function CalendarGlyph({ size = 28 }: GlyphProps) {
   )
 }
 
+export function Game2048Glyph({ size = 28 }: GlyphProps) {
+  return wrap(
+    size,
+    <>
+      <rect x="4" y="4" width="28" height="28" rx="3" fill="#bbada0" />
+      <rect x="6" y="6" width="11" height="11" rx="1.5" fill="#eee4da" />
+      <rect x="19" y="6" width="11" height="11" rx="1.5" fill="#ede0c8" />
+      <rect x="6" y="19" width="11" height="11" rx="1.5" fill="#f2b179" />
+      <rect x="19" y="19" width="11" height="11" rx="1.5" fill="#f59563" />
+      <text x="11.5" y="14.5" textAnchor="middle" fill="#776e65" fontSize="7" fontWeight="700" fontFamily="-apple-system,Helvetica">2</text>
+      <text x="24.5" y="14.5" textAnchor="middle" fill="#776e65" fontSize="7" fontWeight="700" fontFamily="-apple-system,Helvetica">4</text>
+      <text x="11.5" y="27.5" textAnchor="middle" fill="#fff" fontSize="7" fontWeight="700" fontFamily="-apple-system,Helvetica">8</text>
+      <text x="24.5" y="27.5" textAnchor="middle" fill="#fff" fontSize="6" fontWeight="700" fontFamily="-apple-system,Helvetica">16</text>
+    </>
+  )
+}
+
+export function FlappyGlyph({ size = 28 }: GlyphProps) {
+  return wrap(
+    size,
+    <>
+      <rect x="2" y="2" width="32" height="32" rx="3" fill="#70c5ce" />
+      <ellipse cx="18" cy="20" rx="9" ry="7" fill="#fbe34d" />
+      <ellipse cx="18" cy="20" rx="9" ry="7" fill="none" stroke="#000" strokeWidth="0.8" />
+      <ellipse cx="22" cy="18" rx="2.5" ry="2.5" fill="#fff" />
+      <circle cx="23" cy="18.5" r="1.2" fill="#000" />
+      <path d="M11 20 L7 18 L8 22 Z" fill="#f59e0b" stroke="#000" strokeWidth="0.6" />
+      <path d="M26 20 L29 22 L26 24 Z" fill="#f97316" stroke="#000" strokeWidth="0.6" />
+      <ellipse cx="16" cy="23" rx="4" ry="2" fill="#fff" opacity="0.6" />
+    </>
+  )
+}
+
+export function MinesweeperGlyph({ size = 28 }: GlyphProps) {
+  return wrap(
+    size,
+    <>
+      <rect x="3" y="3" width="30" height="30" rx="2" fill="#bdbdbd" />
+      <rect x="3" y="3" width="30" height="2" fill="#fff" />
+      <rect x="3" y="3" width="2" height="30" fill="#fff" />
+      <rect x="3" y="31" width="30" height="2" fill="#7b7b7b" />
+      <rect x="31" y="3" width="2" height="30" fill="#7b7b7b" />
+      <circle cx="18" cy="18" r="7.5" fill="#1f2937" />
+      <rect x="17" y="7" width="2" height="3" fill="#1f2937" />
+      <rect x="17" y="26" width="2" height="3" fill="#1f2937" />
+      <rect x="7" y="17" width="3" height="2" fill="#1f2937" />
+      <rect x="26" y="17" width="3" height="2" fill="#1f2937" />
+      <line x1="11" y1="11" x2="13" y2="13" stroke="#1f2937" strokeWidth="2" />
+      <line x1="25" y1="11" x2="23" y2="13" stroke="#1f2937" strokeWidth="2" />
+      <line x1="11" y1="25" x2="13" y2="23" stroke="#1f2937" strokeWidth="2" />
+      <line x1="25" y1="25" x2="23" y2="23" stroke="#1f2937" strokeWidth="2" />
+      <circle cx="15" cy="15" r="1.5" fill="#fff" />
+    </>
+  )
+}
+
+export function MemoryGlyph({ size = 28 }: GlyphProps) {
+  return wrap(
+    size,
+    <>
+      <rect x="3" y="3" width="30" height="30" rx="3" fill="#7c3aed" />
+      <rect x="5" y="5" width="11" height="13" rx="1.5" fill="#fff" />
+      <rect x="20" y="5" width="11" height="13" rx="1.5" fill="#fff" />
+      <rect x="5" y="20" width="11" height="13" rx="1.5" fill="#fff" />
+      <rect x="20" y="20" width="11" height="13" rx="1.5" fill="#fef3c7" />
+      <text x="10.5" y="14" textAnchor="middle" fill="#7c3aed" fontSize="9" fontWeight="700" fontFamily="-apple-system,Helvetica">?</text>
+      <text x="25.5" y="14" textAnchor="middle" fill="#7c3aed" fontSize="9" fontWeight="700" fontFamily="-apple-system,Helvetica">?</text>
+      <text x="10.5" y="29" textAnchor="middle" fill="#7c3aed" fontSize="9" fontWeight="700" fontFamily="-apple-system,Helvetica">?</text>
+      <text x="25.5" y="29.5" textAnchor="middle" fontSize="9" fontFamily="Apple Color Emoji,Segoe UI Emoji">⭐</text>
+    </>
+  )
+}
+
+export function TicTacToeGlyph({ size = 28 }: GlyphProps) {
+  return wrap(
+    size,
+    <>
+      <rect x="3" y="3" width="30" height="30" rx="3" fill="#fff8e1" />
+      <line x1="14" y1="6" x2="14" y2="30" stroke="#1f2937" strokeWidth="1.6" />
+      <line x1="22" y1="6" x2="22" y2="30" stroke="#1f2937" strokeWidth="1.6" />
+      <line x1="6" y1="14" x2="30" y2="14" stroke="#1f2937" strokeWidth="1.6" />
+      <line x1="6" y1="22" x2="30" y2="22" stroke="#1f2937" strokeWidth="1.6" />
+      <line x1="7" y1="7" x2="13" y2="13" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" />
+      <line x1="13" y1="7" x2="7" y2="13" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="26" cy="18" r="3" fill="none" stroke="#2563eb" strokeWidth="2" />
+      <line x1="16" y1="25" x2="20" y2="29" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" />
+      <line x1="20" y1="25" x2="16" y2="29" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" />
+    </>
+  )
+}
+
+export function PhotoBoothGlyph({ size = 28 }: GlyphProps) {
+  return wrap(
+    size,
+    <>
+      <rect x="3" y="3" width="30" height="30" rx="4" fill="#f5f5f7" />
+      <rect x="6" y="6" width="24" height="20" rx="2" fill="#3b82f6" />
+      <circle cx="18" cy="16" r="6" fill="#1e40af" />
+      <circle cx="18" cy="16" r="3.5" fill="#0a0a0a" />
+      <circle cx="16" cy="14" r="1.2" fill="#fff" opacity="0.9" />
+      <path d="M10 28 L26 28 L24 30 L12 30 Z" fill="#9ca3af" />
+      <circle cx="29" cy="9" r="1.5" fill="#fbbf24" />
+      <path d="M27 6 L29.5 4 L31 7 Z" fill="#fbbf24" />
+      <path d="M28.5 11 L31 13 L29 13.5 Z" fill="#fbbf24" />
+    </>
+  )
+}
+
+export function TranslateGlyph({ size = 28 }: GlyphProps) {
+  return wrap(
+    size,
+    <>
+      <rect x="3" y="3" width="30" height="30" rx="4" fill="#22c55e" />
+      <text x="10" y="18" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="700" fontFamily="-apple-system,Helvetica">A</text>
+      <path d="M14 20 L18 17 L22 20" stroke="#fff" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <text x="26" y="28" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="700" fontFamily="-apple-system,Helvetica">文</text>
+    </>
+  )
+}
+
 export const glyphs = {
   safari: SafariGlyph,
   notes: NotesGlyph,
@@ -283,6 +403,13 @@ export const glyphs = {
   phone: PhoneGlyph,
   gamecenter: GameCenterGlyph,
   calendar: CalendarGlyph,
+  game2048: Game2048Glyph,
+  flappy: FlappyGlyph,
+  minesweeper: MinesweeperGlyph,
+  memory: MemoryGlyph,
+  tictactoe: TicTacToeGlyph,
+  photobooth: PhotoBoothGlyph,
+  translate: TranslateGlyph,
 } as const
 
 export type GlyphName = keyof typeof glyphs

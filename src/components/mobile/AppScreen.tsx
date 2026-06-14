@@ -15,6 +15,13 @@ import {
   MusicContent,
   PhoneContent,
   MessagesContent,
+  Game2048Content,
+  FlappyContent,
+  MinesweeperContent,
+  MemoryContent,
+  TicTacToeContent,
+  PhotoBoothContent,
+  TranslateContent,
 } from './iosAppContent'
 
 interface AppScreenProps {
@@ -69,6 +76,13 @@ function AppContent({ app }: { app: IosAppDefinition }) {
     case 'appstore':    return <AppStoreContent />
     case 'music':       return <MusicContent />
     case 'phone':       return <PhoneContent />
+    case 'game2048':    return <Game2048Content />
+    case 'flappy':      return <FlappyContent />
+    case 'minesweeper': return <MinesweeperContent />
+    case 'memory':      return <MemoryContent />
+    case 'tictactoe':   return <TicTacToeContent />
+    case 'photobooth':  return <PhotoBoothContent />
+    case 'translate':   return <TranslateContent />
     default:            return <StubContent app={app} />
   }
 }

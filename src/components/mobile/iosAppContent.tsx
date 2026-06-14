@@ -772,3 +772,960 @@ export function PhoneContent() {
     </div>
   )
 }
+
+/* ========== 2048 ========== */
+
+type Board2048 = number[][]
+
+const TILE_COLORS_2048: Record<number, { bg: string; fg: string }> = {
+  0:    { bg: 'rgba(238,228,218,0.35)', fg: '#776e65' },
+  2:    { bg: '#eee4da', fg: '#776e65' },
+  4:    { bg: '#ede0c8', fg: '#776e65' },
+  8:    { bg: '#f2b179', fg: '#f9f6f2' },
+  16:   { bg: '#f59563', fg: '#f9f6f2' },
+  32:   { bg: '#f67c5f', fg: '#f9f6f2' },
+  64:   { bg: '#f65e3b', fg: '#f9f6f2' },
+  128:  { bg: '#edcf72', fg: '#f9f6f2' },
+  256:  { bg: '#edcc61', fg: '#f9f6f2' },
+  512:  { bg: '#edc850', fg: '#f9f6f2' },
+  1024: { bg: '#edc53f', fg: '#f9f6f2' },
+  2048: { bg: '#edc22e', fg: '#f9f6f2' },
+  4096: { bg: '#3c3a32', fg: '#f9f6f2' },
+}
+
+const emptyBoard2048 = (): Board2048 => Array.from({ length: 4 }, () => Array(4).fill(0))
+const cloneBoard = (b: Board2048): Board2048 => b.map(r => [...r])
+
+function addRandomTile(b: Board2048): Board2048 {
+  const empties: [number, number][] = []
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) if (b[r][c] === 0) empties.push([r, c])
+  if (empties.length === 0) return b
+  const [r, c] = empties[Math.floor(Math.random() * empties.length)]
+  const v = Math.random() < 0.9 ? 2 : 4
+  const nb = cloneBoard(b)
+  nb[r][c] = v
+  return nb
+}
+
+function slideLeft(row: number[]): { row: number[]; gained: number } {
+  const filtered = row.filter(v => v !== 0)
+  let gained = 0
+  for (let i = 0; i < filtered.length - 1; i++) {
+    if (filtered[i] === filtered[i + 1]) {
+      filtered[i] *= 2
+      gained += filtered[i]
+      filtered.splice(i + 1, 1)
+    }
+  }
+  while (filtered.length < 4) filtered.push(0)
+  return { row: filtered, gained }
+}
+
+function move2048(b: Board2048, dir: 'left' | 'right' | 'up' | 'down'): { board: Board2048; gained: number; moved: boolean } {
+  let nb = cloneBoard(b)
+  let gained = 0
+  if (dir === 'right') nb = nb.map(r => r.slice().reverse())
+  if (dir === 'up' || dir === 'down') {
+    const t = emptyBoard2048()
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) t[c][r] = nb[r][c]
+    nb = t
+    if (dir === 'down') nb = nb.map(r => r.slice().reverse())
+  }
+  nb = nb.map(r => { const s = slideLeft(r); gained += s.gained; return s.row })
+  if (dir === 'right') nb = nb.map(r => r.slice().reverse())
+  if (dir === 'up' || dir === 'down') {
+    if (dir === 'down') nb = nb.map(r => r.slice().reverse())
+    const t = emptyBoard2048()
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) t[c][r] = nb[r][c]
+    nb = t
+  }
+  const moved = JSON.stringify(nb) !== JSON.stringify(b)
+  return { board: nb, gained, moved }
+}
+
+function hasMoves2048(b: Board2048): boolean {
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+    if (b[r][c] === 0) return true
+    if (c < 3 && b[r][c] === b[r][c + 1]) return true
+    if (r < 3 && b[r][c] === b[r + 1][c]) return true
+  }
+  return false
+}
+
+export function Game2048Content() {
+  const [board, setBoard] = useState<Board2048>(() => addRandomTile(addRandomTile(emptyBoard2048())))
+  const [score, setScore] = useState(0)
+  const [best, setBest] = useState(0)
+  const [over, setOver] = useState(false)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
+
+  useEffect(() => {
+    const b = Number(localStorage.getItem('ios-2048-best') || 0)
+    setBest(b)
+  }, [])
+
+  useEffect(() => {
+    if (score > best) {
+      setBest(score)
+      localStorage.setItem('ios-2048-best', String(score))
+    }
+  }, [score, best])
+
+  const apply = useCallback((dir: 'left' | 'right' | 'up' | 'down') => {
+    if (over) return
+    const { board: nb, gained, moved } = move2048(board, dir)
+    if (!moved) return
+    const withTile = addRandomTile(nb)
+    setBoard(withTile)
+    setScore(s => s + gained)
+    if (!hasMoves2048(withTile)) setOver(true)
+  }, [board, over])
+
+  const reset = () => {
+    setBoard(addRandomTile(addRandomTile(emptyBoard2048())))
+    setScore(0)
+    setOver(false)
+  }
+
+  const handleStart = (e: React.TouchEvent) => {
+    const t = e.touches[0]
+    touchStart.current = { x: t.clientX, y: t.clientY }
+  }
+  const handleEnd = (e: React.TouchEvent) => {
+    if (!touchStart.current) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - touchStart.current.x
+    const dy = t.clientY - touchStart.current.y
+    if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return
+    if (Math.abs(dx) > Math.abs(dy)) apply(dx > 0 ? 'right' : 'left')
+    else apply(dy > 0 ? 'down' : 'up')
+    touchStart.current = null
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 11, color: '#776e65', textTransform: 'uppercase', fontWeight: 700 }}>Score</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: '#776e65' }}>{score}</div>
+        </div>
+        <div style={{ background: '#bbada0', padding: '6px 12px', borderRadius: 4, color: '#fff' }}>
+          <div style={{ fontSize: 9, textTransform: 'uppercase', opacity: 0.9 }}>Best</div>
+          <div style={{ fontSize: 18, fontWeight: 700 }}>{best}</div>
+        </div>
+        <button onClick={reset} style={{
+          background: '#8f7a66', color: '#f9f6f2', border: 'none', padding: '8px 14px', borderRadius: 4,
+          fontSize: 13, fontWeight: 700, cursor: 'pointer',
+        }}>New Game</button>
+      </div>
+      <div
+        onTouchStart={handleStart}
+        onTouchEnd={handleEnd}
+        style={{
+          background: '#bbada0', padding: 8, borderRadius: 6, aspectRatio: '1/1', position: 'relative',
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridTemplateRows: 'repeat(4, 1fr)', gap: 8,
+          touchAction: 'none',
+        }}
+      >
+        {board.flatMap((row, ri) => row.map((cell, ci) => {
+          const c = TILE_COLORS_2048[cell] || TILE_COLORS_2048[4096]
+          return (
+            <div key={`${ri}-${ci}`} style={{
+              background: c.bg, color: c.fg, borderRadius: 4,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: cell >= 1024 ? 18 : cell >= 128 ? 22 : 26, fontWeight: 800,
+              transition: 'background 120ms',
+            }}>
+              {cell !== 0 ? cell : ''}
+            </div>
+          )
+        }))}
+        {over && (
+          <div style={{
+            position: 'absolute', inset: 0, background: 'rgba(238,228,218,0.73)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            borderRadius: 6, gap: 10,
+          }}>
+            <div style={{ fontSize: 32, fontWeight: 800, color: '#776e65' }}>Game Over</div>
+            <button onClick={reset} style={{
+              background: '#8f7a66', color: '#f9f6f2', border: 'none', padding: '10px 18px', borderRadius: 4,
+              fontSize: 14, fontWeight: 700, cursor: 'pointer',
+            }}>Try Again</button>
+          </div>
+        )}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 6, maxWidth: 220, margin: '0 auto', width: '100%' }}>
+        <div />
+        <button onClick={() => apply('up')} style={arrowBtn}>▲</button>
+        <div />
+        <button onClick={() => apply('left')} style={arrowBtn}>◀</button>
+        <button onClick={() => apply('down')} style={arrowBtn}>▼</button>
+        <button onClick={() => apply('right')} style={arrowBtn}>▶</button>
+      </div>
+      <div style={{ fontSize: 11, textAlign: 'center', color: '#776e65' }}>
+        Swipe on the board or tap arrows. Join the tiles to reach <b>2048</b>!
+      </div>
+    </div>
+  )
+}
+
+const arrowBtn: React.CSSProperties = {
+  background: '#bbada0', color: '#fff', border: 'none', borderRadius: 6,
+  padding: '10px 0', fontSize: 18, fontWeight: 700, cursor: 'pointer',
+}
+
+/* ========== Flappy Bird ========== */
+
+export function FlappyContent() {
+  const W = 280, H = 380
+  const GRAVITY = 0.45, FLAP = -7.2, PIPE_W = 50, GAP = 110, PIPE_SPEED = 2
+  const [running, setRunning] = useState(false)
+  const [score, setScore] = useState(0)
+  const [best, setBest] = useState(0)
+  const [over, setOver] = useState(false)
+  const [bird, setBird] = useState({ y: H / 2, vy: 0 })
+  const [pipes, setPipes] = useState<{ x: number; topH: number; passed: boolean }[]>([])
+  const rafRef = useRef<number>(0)
+  const birdRef = useRef(bird)
+  const pipesRef = useRef(pipes)
+  birdRef.current = bird
+  pipesRef.current = pipes
+
+  useEffect(() => {
+    const b = Number(localStorage.getItem('ios-flappy-best') || 0)
+    setBest(b)
+  }, [])
+
+  const reset = useCallback(() => {
+    setBird({ y: H / 2, vy: 0 })
+    setPipes([{ x: W + 50, topH: 80 + Math.random() * 150, passed: false }])
+    setScore(0)
+    setOver(false)
+  }, [])
+
+  const flap = () => {
+    if (over) { reset(); setRunning(true); return }
+    if (!running) { reset(); setRunning(true); return }
+    setBird(b => ({ ...b, vy: FLAP }))
+  }
+
+  useEffect(() => {
+    if (!running) return
+    const tick = () => {
+      setBird(b => {
+        const ny = b.y + b.vy + GRAVITY
+        return { y: ny, vy: b.vy + GRAVITY }
+      })
+      setPipes(ps => {
+        let next = ps.map(p => ({ ...p, x: p.x - PIPE_SPEED }))
+        next = next.filter(p => p.x > -PIPE_W)
+        const last = next[next.length - 1]
+        if (!last || last.x < W - 160) {
+          next.push({ x: W + 20, topH: 60 + Math.random() * 180, passed: false })
+        }
+        return next
+      })
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [running, reset])
+
+  useEffect(() => {
+    if (!running) return
+    const b = birdRef.current
+    if (b.y < 0 || b.y > H - 20) {
+      setRunning(false); setOver(true)
+      if (score > best) { setBest(score); localStorage.setItem('ios-flappy-best', String(score)) }
+      return
+    }
+    const newPipes = pipesRef.current.map(p => ({ ...p }))
+    let scoreAdd = 0
+    for (const p of newPipes) {
+      const birdX = 60
+      if (p.x < birdX + 16 && p.x + PIPE_W > birdX - 16) {
+        if (b.y < p.topH || b.y > p.topH + GAP) {
+          setRunning(false); setOver(true)
+          if (score > best) { setBest(score); localStorage.setItem('ios-flappy-best', String(score)) }
+          return
+        }
+      }
+      if (!p.passed && p.x + PIPE_W < 60) {
+        p.passed = true
+        scoreAdd++
+      }
+    }
+    if (scoreAdd > 0) {
+      setScore(s => s + scoreAdd)
+      setPipes(newPipes)
+    }
+  }, [bird, pipes, running, score, best])
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-around', width: '100%', fontSize: 12 }}>
+        <div><b>Score:</b> {score}</div>
+        <div><b>Best:</b> {best}</div>
+      </div>
+      <div
+        onClick={flap}
+        style={{
+          width: W, height: H, background: 'linear-gradient(180deg,#70c5ce 0%,#a3e0e6 80%,#ded895 80%,#ded895 100%)',
+          position: 'relative', overflow: 'hidden', borderRadius: 8, cursor: 'pointer',
+          boxShadow: 'inset 0 -8px 0 #5a8939',
+          border: '2px solid #1d5a72',
+          userSelect: 'none', touchAction: 'manipulation',
+        }}
+      >
+        {pipes.map((p, i) => (
+          <div key={i}>
+            <div style={{ position: 'absolute', left: p.x, top: 0, width: PIPE_W, height: p.topH, background: '#5a8939', border: '2px solid #2d5016', borderBottom: 'none' }} />
+            <div style={{ position: 'absolute', left: p.x - 2, top: p.topH - 12, width: PIPE_W + 4, height: 12, background: '#73a948', border: '2px solid #2d5016' }} />
+            <div style={{ position: 'absolute', left: p.x, top: p.topH + GAP, width: PIPE_W, height: H - p.topH - GAP, background: '#5a8939', border: '2px solid #2d5016', borderTop: 'none' }} />
+            <div style={{ position: 'absolute', left: p.x - 2, top: p.topH + GAP, width: PIPE_W + 4, height: 12, background: '#73a948', border: '2px solid #2d5016' }} />
+          </div>
+        ))}
+        <div style={{
+          position: 'absolute', left: 60 - 16, top: bird.y - 12, width: 32, height: 24,
+          background: '#fbe34d', borderRadius: '50% 50% 45% 45%', border: '2px solid #000',
+          transform: `rotate(${Math.max(-30, Math.min(70, bird.vy * 5))}deg)`,
+          transition: 'transform 60ms',
+          boxShadow: 'inset -4px -3px 0 #f59e0b',
+        }}>
+          <div style={{ position: 'absolute', right: 4, top: 5, width: 6, height: 6, background: '#fff', borderRadius: '50%', border: '1px solid #000' }}>
+            <div style={{ position: 'absolute', right: 0, top: 1, width: 3, height: 3, background: '#000', borderRadius: '50%' }} />
+          </div>
+          <div style={{ position: 'absolute', right: -6, top: 9, width: 8, height: 4, background: '#f97316', border: '1px solid #000', clipPath: 'polygon(0 0, 100% 50%, 0 100%)' }} />
+        </div>
+        {(!running || over) && (
+          <div style={{
+            position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', textAlign: 'center', gap: 8,
+          }}>
+            <div style={{ fontSize: 24, fontWeight: 800, textShadow: '2px 2px 0 #000' }}>
+              {over ? 'Game Over' : 'Tap to Fly'}
+            </div>
+            <div style={{ fontSize: 13 }}>
+              {over ? `Score: ${score} · Tap to retry` : 'Avoid the pipes!'}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ========== Minesweeper ========== */
+
+type MSCell = { mine: boolean; revealed: boolean; flagged: boolean; adj: number }
+const MS_ROWS = 10, MS_COLS = 8, MS_MINES = 12
+
+function newMSBoard(): MSCell[][] {
+  const b: MSCell[][] = Array.from({ length: MS_ROWS }, () =>
+    Array.from({ length: MS_COLS }, () => ({ mine: false, revealed: false, flagged: false, adj: 0 }))
+  )
+  let placed = 0
+  while (placed < MS_MINES) {
+    const r = Math.floor(Math.random() * MS_ROWS)
+    const c = Math.floor(Math.random() * MS_COLS)
+    if (!b[r][c].mine) { b[r][c].mine = true; placed++ }
+  }
+  for (let r = 0; r < MS_ROWS; r++) for (let c = 0; c < MS_COLS; c++) {
+    if (b[r][c].mine) continue
+    let n = 0
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      if (dr === 0 && dc === 0) continue
+      const nr = r + dr, nc = c + dc
+      if (nr < 0 || nr >= MS_ROWS || nc < 0 || nc >= MS_COLS) continue
+      if (b[nr][nc].mine) n++
+    }
+    b[r][c].adj = n
+  }
+  return b
+}
+
+function floodReveal(b: MSCell[][], r: number, c: number): MSCell[][] {
+  const nb = b.map(row => row.map(cell => ({ ...cell })))
+  const stack: [number, number][] = [[r, c]]
+  while (stack.length) {
+    const [cr, cc] = stack.pop()!
+    if (cr < 0 || cr >= MS_ROWS || cc < 0 || cc >= MS_COLS) continue
+    const cell = nb[cr][cc]
+    if (cell.revealed || cell.flagged) continue
+    cell.revealed = true
+    if (cell.adj === 0 && !cell.mine) {
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue
+        stack.push([cr + dr, cc + dc])
+      }
+    }
+  }
+  return nb
+}
+
+export function MinesweeperContent() {
+  const [board, setBoard] = useState<MSCell[][]>(() => newMSBoard())
+  const [over, setOver] = useState(false)
+  const [won, setWon] = useState(false)
+  const [flagMode, setFlagMode] = useState(false)
+  const [time, setTime] = useState(0)
+  const startedRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (over || won) return
+    if (!startedRef.current) startedRef.current = Date.now()
+    const id = setInterval(() => {
+      if (startedRef.current) setTime(Math.floor((Date.now() - startedRef.current) / 1000))
+    }, 500)
+    return () => clearInterval(id)
+  }, [over, won])
+
+  const reset = () => {
+    setBoard(newMSBoard())
+    setOver(false)
+    setWon(false)
+    setTime(0)
+    startedRef.current = null
+  }
+
+  const tap = (r: number, c: number) => {
+    if (over || won) return
+    const cell = board[r][c]
+    if (cell.revealed) return
+    if (flagMode) {
+      const nb = board.map(row => row.map(x => ({ ...x })))
+      nb[r][c].flagged = !nb[r][c].flagged
+      setBoard(nb)
+      return
+    }
+    if (cell.flagged) return
+    if (cell.mine) {
+      const nb = board.map(row => row.map(x => ({ ...x, revealed: x.mine ? true : x.revealed })))
+      setBoard(nb)
+      setOver(true)
+      return
+    }
+    const nb = floodReveal(board, r, c)
+    let unrevealed = 0
+    for (let i = 0; i < MS_ROWS; i++) for (let j = 0; j < MS_COLS; j++) {
+      if (!nb[i][j].revealed && !nb[i][j].mine) unrevealed++
+    }
+    if (unrevealed === 0) setWon(true)
+    setBoard(nb)
+  }
+
+  const flagsUsed = board.flat().filter(c => c.flagged).length
+  const colorFor = (n: number) => ['#0000ff', '#008000', '#ff0000', '#000080', '#800000', '#008080', '#000000', '#808080'][n - 1] || '#000'
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%',
+        background: '#c0c0c0', border: '3px inset #c0c0c0', padding: '6px 10px',
+      }}>
+        <div style={{ background: '#000', color: '#f00', fontFamily: 'monospace', fontSize: 18, fontWeight: 700, padding: '2px 6px', minWidth: 40, textAlign: 'center' }}>
+          {String(MS_MINES - flagsUsed).padStart(3, '0')}
+        </div>
+        <button onClick={reset} style={{
+          width: 36, height: 36, border: '2px outset #c0c0c0', background: '#c0c0c0', fontSize: 18, cursor: 'pointer',
+        }}>{over ? '😵' : won ? '😎' : '🙂'}</button>
+        <div style={{ background: '#000', color: '#f00', fontFamily: 'monospace', fontSize: 18, fontWeight: 700, padding: '2px 6px', minWidth: 40, textAlign: 'center' }}>
+          {String(time).padStart(3, '0')}
+        </div>
+      </div>
+      <button onClick={() => setFlagMode(f => !f)} style={{
+        background: flagMode ? '#fbbf24' : '#e5e7eb', border: '1px solid #9ca3af', padding: '6px 14px',
+        borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+      }}>🚩 Flag {flagMode ? 'ON' : 'OFF'}</button>
+      <div style={{
+        display: 'grid', gridTemplateColumns: `repeat(${MS_COLS}, 1fr)`, gap: 1,
+        background: '#7b7b7b', padding: 2, border: '3px inset #c0c0c0', width: '100%', maxWidth: 320,
+      }}>
+        {board.flatMap((row, r) => row.map((cell, c) => (
+          <div key={`${r}-${c}`} onClick={() => tap(r, c)} style={{
+            aspectRatio: '1/1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: cell.revealed ? '#bdbdbd' : '#c0c0c0',
+            border: cell.revealed ? '1px solid #7b7b7b' : '2px outset #fff',
+            fontSize: 13, fontWeight: 700, color: cell.mine && cell.revealed ? '#000' : colorFor(cell.adj),
+            cursor: 'pointer', userSelect: 'none',
+          }}>
+            {cell.flagged ? '🚩' : cell.revealed ? (cell.mine ? '💣' : (cell.adj > 0 ? cell.adj : '')) : ''}
+          </div>
+        )))}
+      </div>
+      {(over || won) && (
+        <div style={{ fontSize: 16, fontWeight: 700, color: won ? '#16a34a' : '#dc2626' }}>
+          {won ? '🎉 You won!' : '💥 Game Over'}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ========== Memory Cards ========== */
+
+const MEMORY_EMOJIS = ['🌸', '🚀', '🎸', '🍕', '🐱', '⚡', '🌙', '🦄']
+
+type MemCard = { id: number; emoji: string; flipped: boolean; matched: boolean }
+
+function newMemoryDeck(): MemCard[] {
+  const all = [...MEMORY_EMOJIS, ...MEMORY_EMOJIS]
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[all[i], all[j]] = [all[j], all[i]]
+  }
+  return all.map((emoji, id) => ({ id, emoji, flipped: false, matched: false }))
+}
+
+export function MemoryContent() {
+  const [deck, setDeck] = useState<MemCard[]>(() => newMemoryDeck())
+  const [flipped, setFlipped] = useState<number[]>([])
+  const [moves, setMoves] = useState(0)
+  const [best, setBest] = useState<number | null>(null)
+
+  useEffect(() => {
+    const b = localStorage.getItem('ios-memory-best')
+    if (b) setBest(Number(b))
+  }, [])
+
+  useEffect(() => {
+    if (flipped.length !== 2) return
+    const [a, b] = flipped
+    const ca = deck.find(c => c.id === a)!
+    const cb = deck.find(c => c.id === b)!
+    setMoves(m => m + 1)
+    if (ca.emoji === cb.emoji) {
+      setDeck(d => d.map(c => c.id === a || c.id === b ? { ...c, matched: true } : c))
+      setFlipped([])
+    } else {
+      const t = setTimeout(() => {
+        setDeck(d => d.map(c => c.id === a || c.id === b ? { ...c, flipped: false } : c))
+        setFlipped([])
+      }, 800)
+      return () => clearTimeout(t)
+    }
+  }, [flipped, deck])
+
+  const won = deck.every(c => c.matched)
+  useEffect(() => {
+    if (won && moves > 0) {
+      if (best === null || moves < best) {
+        setBest(moves)
+        localStorage.setItem('ios-memory-best', String(moves))
+      }
+    }
+  }, [won, moves, best])
+
+  const tap = (id: number) => {
+    const card = deck.find(c => c.id === id)
+    if (!card || card.flipped || card.matched || flipped.length === 2) return
+    setDeck(d => d.map(c => c.id === id ? { ...c, flipped: true } : c))
+    setFlipped(f => [...f, id])
+  }
+
+  const reset = () => {
+    setDeck(newMemoryDeck())
+    setFlipped([])
+    setMoves(0)
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-around', width: '100%', fontSize: 13 }}>
+        <div><b>Moves:</b> {moves}</div>
+        <div><b>Best:</b> {best ?? '—'}</div>
+        <button onClick={reset} style={{
+          background: '#7c3aed', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: 6,
+          fontSize: 12, fontWeight: 600, cursor: 'pointer',
+        }}>New Game</button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, width: '100%' }}>
+        {deck.map(card => (
+          <div key={card.id} onClick={() => tap(card.id)} style={{
+            aspectRatio: '3/4', perspective: '600px', cursor: card.matched ? 'default' : 'pointer',
+          }}>
+            <div style={{
+              width: '100%', height: '100%', position: 'relative',
+              transition: 'transform 360ms', transformStyle: 'preserve-3d',
+              transform: (card.flipped || card.matched) ? 'rotateY(180deg)' : '',
+            }}>
+              <div style={{
+                position: 'absolute', inset: 0, backfaceVisibility: 'hidden',
+                background: 'linear-gradient(135deg,#7c3aed,#4c1d95)',
+                borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 26, color: 'rgba(255,255,255,0.4)', fontWeight: 800,
+                border: '2px solid #4c1d95', boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              }}>?</div>
+              <div style={{
+                position: 'absolute', inset: 0, backfaceVisibility: 'hidden',
+                transform: 'rotateY(180deg)',
+                background: card.matched ? '#dcfce7' : '#fff',
+                borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 30, border: `2px solid ${card.matched ? '#16a34a' : '#d4d4d8'}`,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              }}>{card.emoji}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {won && (
+        <div style={{ fontSize: 18, fontWeight: 700, color: '#7c3aed' }}>
+          🎉 Won in {moves} moves!
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ========== Tic Tac Toe ========== */
+
+type TTTCell = 'X' | 'O' | null
+
+function checkWinner(b: TTTCell[]): { winner: TTTCell; line: number[] | null } {
+  const lines = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6],
+  ]
+  for (const l of lines) {
+    const [a, c, d] = l
+    if (b[a] && b[a] === b[c] && b[a] === b[d]) return { winner: b[a], line: l }
+  }
+  return { winner: null, line: null }
+}
+
+function minimax(b: TTTCell[], isMax: boolean): number {
+  const { winner } = checkWinner(b)
+  if (winner === 'O') return 1
+  if (winner === 'X') return -1
+  if (b.every(c => c !== null)) return 0
+  let best = isMax ? -Infinity : Infinity
+  for (let i = 0; i < 9; i++) {
+    if (b[i] === null) {
+      b[i] = isMax ? 'O' : 'X'
+      const s = minimax(b, !isMax)
+      b[i] = null
+      best = isMax ? Math.max(best, s) : Math.min(best, s)
+    }
+  }
+  return best
+}
+
+function bestMove(b: TTTCell[]): number {
+  let best = -Infinity, move = -1
+  for (let i = 0; i < 9; i++) {
+    if (b[i] === null) {
+      b[i] = 'O'
+      const s = minimax(b, false)
+      b[i] = null
+      if (s > best) { best = s; move = i }
+    }
+  }
+  return move
+}
+
+export function TicTacToeContent() {
+  const [board, setBoard] = useState<TTTCell[]>(Array(9).fill(null))
+  const [xTurn, setXTurn] = useState(true)
+  const [stats, setStats] = useState({ wins: 0, losses: 0, draws: 0 })
+
+  useEffect(() => {
+    const s = localStorage.getItem('ios-ttt-stats')
+    if (s) try { setStats(JSON.parse(s)) } catch {}
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('ios-ttt-stats', JSON.stringify(stats))
+  }, [stats])
+
+  const { winner, line } = checkWinner(board)
+  const isDraw = !winner && board.every(c => c !== null)
+  const gameEnded = winner !== null || isDraw
+
+  useEffect(() => {
+    if (gameEnded) {
+      if (winner === 'X') setStats(s => ({ ...s, wins: s.wins + 1 }))
+      else if (winner === 'O') setStats(s => ({ ...s, losses: s.losses + 1 }))
+      else if (isDraw) setStats(s => ({ ...s, draws: s.draws + 1 }))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [winner, isDraw])
+
+  useEffect(() => {
+    if (gameEnded || xTurn) return
+    const t = setTimeout(() => {
+      const move = bestMove(board.slice())
+      if (move !== -1) {
+        const nb = board.slice()
+        nb[move] = 'O'
+        setBoard(nb)
+        setXTurn(true)
+      }
+    }, 400)
+    return () => clearTimeout(t)
+  }, [xTurn, board, gameEnded])
+
+  const tap = (i: number) => {
+    if (board[i] || gameEnded || !xTurn) return
+    const nb = board.slice()
+    nb[i] = 'X'
+    setBoard(nb)
+    setXTurn(false)
+  }
+
+  const reset = () => {
+    setBoard(Array(9).fill(null))
+    setXTurn(true)
+  }
+
+  const resetStats = () => setStats({ wins: 0, losses: 0, draws: 0 })
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 16, fontSize: 13, fontWeight: 600 }}>
+        <div style={{ color: '#16a34a' }}>You: {stats.wins}</div>
+        <div style={{ color: '#dc2626' }}>AI: {stats.losses}</div>
+        <div style={{ color: '#6b7280' }}>Draw: {stats.draws}</div>
+      </div>
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(3, 80px)', gridTemplateRows: 'repeat(3, 80px)',
+        gap: 4, background: '#000', padding: 4, borderRadius: 8,
+      }}>
+        {board.map((cell, i) => (
+          <div key={i} onClick={() => tap(i)} style={{
+            background: line && line.includes(i) ? '#fef08a' : '#fff8e1',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 40, fontWeight: 800, cursor: gameEnded || cell ? 'default' : 'pointer',
+            color: cell === 'X' ? '#dc2626' : '#2563eb', borderRadius: 4,
+            transition: 'background 200ms',
+          }}>
+            {cell}
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 15, fontWeight: 600, minHeight: 22 }}>
+        {winner === 'X' ? '🎉 You win!' :
+         winner === 'O' ? '🤖 AI wins!' :
+         isDraw ? '🤝 Draw!' :
+         xTurn ? 'Your turn (X)' : 'AI thinking…'}
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={reset} style={{
+          background: '#ca8a04', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 6,
+          fontSize: 13, fontWeight: 600, cursor: 'pointer',
+        }}>New Game</button>
+        <button onClick={resetStats} style={{
+          background: '#e5e7eb', color: '#111', border: 'none', padding: '8px 16px', borderRadius: 6,
+          fontSize: 13, fontWeight: 600, cursor: 'pointer',
+        }}>Reset Stats</button>
+      </div>
+    </div>
+  )
+}
+
+/* ========== Photo Booth ========== */
+
+const PB_FILTERS = [
+  { name: 'Normal', css: 'none' },
+  { name: 'Grayscale', css: 'grayscale(1)' },
+  { name: 'Sepia', css: 'sepia(1)' },
+  { name: 'Invert', css: 'invert(1)' },
+  { name: 'Vivid', css: 'saturate(2) contrast(1.2)' },
+  { name: 'Blur', css: 'blur(3px)' },
+  { name: 'Hue', css: 'hue-rotate(180deg)' },
+  { name: 'Cold', css: 'hue-rotate(200deg) saturate(1.4)' },
+  { name: 'Warm', css: 'sepia(0.4) saturate(1.6)' },
+]
+
+export function PhotoBoothContent() {
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [filter, setFilter] = useState(0)
+  const [error, setError] = useState<string | null>(null)
+  const [snapshot, setSnapshot] = useState<string | null>(null)
+
+  useEffect(() => {
+    let stream: MediaStream | null = null
+    const start = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          await videoRef.current.play()
+        }
+      } catch (e) {
+        setError('Camera not available. Allow camera access to use Photo Booth.')
+      }
+    }
+    start()
+    return () => {
+      if (stream) stream.getTracks().forEach(t => t.stop())
+    }
+  }, [])
+
+  const snap = () => {
+    const v = videoRef.current; const c = canvasRef.current
+    if (!v || !c) return
+    c.width = v.videoWidth; c.height = v.videoHeight
+    const ctx = c.getContext('2d')
+    if (!ctx) return
+    ctx.filter = PB_FILTERS[filter].css
+    ctx.translate(c.width, 0)
+    ctx.scale(-1, 1)
+    ctx.drawImage(v, 0, 0)
+    setSnapshot(c.toDataURL('image/jpeg', 0.92))
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
+      <div style={{ width: '100%', aspectRatio: '4/3', background: '#000', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+        {snapshot ? (
+          <img src={snapshot} alt="snapshot" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+          <video ref={videoRef} playsInline muted style={{
+            width: '100%', height: '100%', objectFit: 'cover',
+            filter: PB_FILTERS[filter].css, transform: 'scaleX(-1)',
+          }} />
+        )}
+        {error && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, textAlign: 'center', fontSize: 13 }}>
+            {error}
+          </div>
+        )}
+      </div>
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
+      <div style={{ display: 'flex', gap: 8 }}>
+        {snapshot ? (
+          <>
+            <a href={snapshot} download="photobooth.jpg" style={{
+              background: '#2563eb', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 6,
+              fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'none',
+            }}>Download</a>
+            <button onClick={() => setSnapshot(null)} style={{
+              background: '#e5e7eb', color: '#111', border: 'none', padding: '8px 16px', borderRadius: 6,
+              fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            }}>Retake</button>
+          </>
+        ) : (
+          <button onClick={snap} disabled={!!error} style={{
+            background: error ? '#9ca3af' : '#dc2626', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 20,
+            fontSize: 14, fontWeight: 700, cursor: error ? 'not-allowed' : 'pointer',
+          }}>📷 Snap</button>
+        )}
+      </div>
+      <div style={{ width: '100%', overflowX: 'auto', display: 'flex', gap: 6, paddingBottom: 4 }}>
+        {PB_FILTERS.map((f, i) => (
+          <button key={f.name} onClick={() => setFilter(i)} style={{
+            flex: 'none', background: filter === i ? '#9d174d' : '#fff', color: filter === i ? '#fff' : '#111',
+            border: `1px solid ${filter === i ? '#9d174d' : '#d4d4d8'}`, padding: '6px 12px', borderRadius: 14,
+            fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+          }}>{f.name}</button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ========== Translate ========== */
+
+const TR_LANGUAGES = [
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Spanish' },
+  { code: 'fr', name: 'French' },
+  { code: 'de', name: 'German' },
+  { code: 'it', name: 'Italian' },
+  { code: 'pt', name: 'Portuguese' },
+  { code: 'ja', name: 'Japanese' },
+  { code: 'ko', name: 'Korean' },
+  { code: 'zh', name: 'Chinese' },
+  { code: 'hi', name: 'Hindi' },
+  { code: 'ar', name: 'Arabic' },
+  { code: 'ru', name: 'Russian' },
+]
+
+export function TranslateContent() {
+  const [from, setFrom] = useState('en')
+  const [to, setTo] = useState('es')
+  const [input, setInput] = useState('')
+  const [output, setOutput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const translate = useCallback(async (text: string) => {
+    if (!text.trim()) { setOutput(''); return }
+    setLoading(true); setError(null)
+    try {
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}`
+      const r = await fetch(url)
+      const j = await r.json()
+      if (j.responseStatus === 200 || j.responseData?.translatedText) {
+        setOutput(j.responseData.translatedText || '')
+      } else {
+        setError('Translation failed')
+      }
+    } catch (e) {
+      setError('Network error')
+    } finally {
+      setLoading(false)
+    }
+  }, [from, to])
+
+  useEffect(() => {
+    const t = setTimeout(() => translate(input), 500)
+    return () => clearTimeout(t)
+  }, [input, translate])
+
+  const swap = () => {
+    setFrom(to); setTo(from)
+    setInput(output); setOutput(input)
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <select value={from} onChange={e => setFrom(e.target.value)} style={selStyle}>
+          {TR_LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
+        </select>
+        <button onClick={swap} style={{
+          background: '#15803d', color: '#fff', border: 'none', borderRadius: '50%',
+          width: 32, height: 32, fontSize: 16, cursor: 'pointer', flex: 'none',
+        }}>⇄</button>
+        <select value={to} onChange={e => setTo(e.target.value)} style={selStyle}>
+          {TR_LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
+        </select>
+      </div>
+      <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #d4d6da', padding: 10 }}>
+        <div style={{ fontSize: 11, color: '#6b7280', textTransform: 'uppercase', marginBottom: 4 }}>
+          {TR_LANGUAGES.find(l => l.code === from)?.name}
+        </div>
+        <textarea
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder="Enter text…"
+          style={{
+            width: '100%', border: 'none', resize: 'none', outline: 'none',
+            fontSize: 16, minHeight: 90, background: 'transparent', color: '#111',
+            fontFamily: 'inherit',
+          }}
+        />
+      </div>
+      <div style={{ background: '#f0fdf4', borderRadius: 8, border: '1px solid #86efac', padding: 10, minHeight: 100 }}>
+        <div style={{ fontSize: 11, color: '#15803d', textTransform: 'uppercase', marginBottom: 4 }}>
+          {TR_LANGUAGES.find(l => l.code === to)?.name}
+          {loading && <span style={{ marginLeft: 6 }}>· translating…</span>}
+        </div>
+        <div style={{ fontSize: 16, color: '#111', whiteSpace: 'pre-wrap' }}>
+          {error ? <span style={{ color: '#dc2626' }}>{error}</span> : (output || <span style={{ color: '#9ca3af' }}>Translation will appear here</span>)}
+        </div>
+      </div>
+      <div style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center' }}>
+        Powered by MyMemory · free translation API
+      </div>
+    </div>
+  )
+}
+
+const selStyle: React.CSSProperties = {
+  flex: 1, padding: '8px 10px', borderRadius: 8, border: '1px solid #d4d6da',
+  background: '#fff', fontSize: 14, outline: 'none',
+}

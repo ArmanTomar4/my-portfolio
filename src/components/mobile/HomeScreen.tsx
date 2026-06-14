@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import AppIcon from './AppIcon'
 import StatusBar from './StatusBar'
-import { iosApps, iosDock, IosAppDefinition } from './iosApps'
+import { iosAppPages, iosDock, IosAppDefinition } from './iosApps'
 
 interface HomeScreenProps {
   onOpenApp: (app: IosAppDefinition) => void
@@ -11,9 +11,20 @@ interface HomeScreenProps {
 
 export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
   const [editing, setEditing] = useState(false)
+  const [page, setPage] = useState(0)
+  const pagerRef = useRef<HTMLDivElement | null>(null)
 
   const exitEditMode = () => setEditing(false)
   const enterEditMode = () => setEditing(true)
+
+  const handleScroll = () => {
+    const el = pagerRef.current
+    if (!el) return
+    const w = el.clientWidth
+    if (w === 0) return
+    const idx = Math.round(el.scrollLeft / w)
+    if (idx !== page) setPage(idx)
+  }
 
   return (
     <div
@@ -22,24 +33,32 @@ export default function HomeScreen({ onOpenApp }: HomeScreenProps) {
     >
       <StatusBar />
       <div className={`ios-home ${editing ? 'editing' : ''}`}>
-        <div className="ios-home-grid">
-          {iosApps.map((app) => (
-            <AppIcon
-              key={app.id}
-              app={app}
-              onOpen={() => {
-                if (editing) {
-                  setEditing(false)
-                  return
-                }
-                onOpenApp(app)
-              }}
-              onLongPress={enterEditMode}
-            />
+        <div className="ios-home-pager" ref={pagerRef} onScroll={handleScroll}>
+          {iosAppPages.map((apps, i) => (
+            <div className="ios-home-page" key={i}>
+              <div className="ios-home-grid">
+                {apps.map((app) => (
+                  <AppIcon
+                    key={app.id}
+                    app={app}
+                    onOpen={() => {
+                      if (editing) {
+                        setEditing(false)
+                        return
+                      }
+                      onOpenApp(app)
+                    }}
+                    onLongPress={enterEditMode}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
         <div className="ios-page-dots" aria-hidden>
-          <span className="ios-page-dot active" />
+          {iosAppPages.map((_, i) => (
+            <span key={i} className={`ios-page-dot ${i === page ? 'active' : ''}`} />
+          ))}
         </div>
         <div className="ios-dock">
           {iosDock.map((app) => (
