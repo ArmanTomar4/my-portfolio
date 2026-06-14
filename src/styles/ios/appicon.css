@@ -102,15 +102,23 @@
   to   { transform: rotate(1.3deg); }
 }
 
-/* Red notification badge — top-right */
+/* Tile wrapper — holds the tile + the notification badge so the badge
+   can sit outside the tile's overflow:hidden clipping. */
+.ios-app-tile-wrap {
+  position: relative;
+  width: 58px;
+  height: 58px;
+}
+
+/* Red notification badge — top-right of the tile, NOT clipped */
 .ios-app-notif {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border-radius: 10px;
+  top: -6px;
+  right: -8px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
   background: linear-gradient(180deg, #ff4040 0%, #c8181a 100%);
   color: #fff;
   font-size: 11px;
@@ -125,4 +133,5 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);
   line-height: 1;
+  pointer-events: none;
 }

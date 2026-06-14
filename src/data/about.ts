@@ -6,6 +6,8 @@ export interface ExperienceItem {
   end: string
   bullets: string[]
   current?: boolean
+  /** True for non-employer entries (e.g. independent freelance work) */
+  freelance?: boolean
 }
 
 export interface ProjectItem {
@@ -61,11 +63,12 @@ export const experience: ExperienceItem[] = [
     ],
   },
   {
-    company: 'Freelance',
-    role: 'Full Stack Developer',
+    company: 'Independent',
+    role: 'Freelance Full Stack Developer',
     location: 'Remote',
     start: '2023',
     end: '2024',
+    freelance: true,
     bullets: [
       'Handled 12+ clients independently — delivered e-commerce sites, landing pages, and portfolios.',
       'Managed complete project lifecycle from requirements to deployment for each client.',

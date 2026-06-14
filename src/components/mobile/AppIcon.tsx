@@ -50,16 +50,18 @@ export default function AppIcon({ app, onOpen, onLongPress }: AppIconProps) {
       onPointerCancel={cancelPress}
       onPointerLeave={cancelPress}
     >
-      <div className="ios-app-tile" style={style}>
-        <div className="ios-app-badge">−</div>
+      <div className="ios-app-tile-wrap">
+        <div className="ios-app-tile" style={style}>
+          <div className="ios-app-badge">−</div>
+          <div className="ios-app-glyph">
+            <Glyph size={32} />
+          </div>
+        </div>
         {app.badge !== undefined && app.badge > 0 && (
           <div className="ios-app-notif" aria-label={`${app.badge} notifications`}>
             {app.badge > 99 ? '99+' : app.badge}
           </div>
         )}
-        <div className="ios-app-glyph">
-          <Glyph size={32} />
-        </div>
       </div>
       <span className="ios-app-label">{app.label}</span>
     </div>

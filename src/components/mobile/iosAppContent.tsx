@@ -1751,79 +1751,168 @@ const PB_FILTERS = [
 export function PhotoBoothContent() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const fileRef = useRef<HTMLInputElement | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
   const [filter, setFilter] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [snapshot, setSnapshot] = useState<string | null>(null)
+  const [uploaded, setUploaded] = useState<string | null>(null)
+  const [cameraOn, setCameraOn] = useState(false)
+  const [starting, setStarting] = useState(false)
 
-  useEffect(() => {
-    let stream: MediaStream | null = null
-    const start = async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          await videoRef.current.play()
-        }
-      } catch (e) {
-        setError('Camera not available. Allow camera access to use Photo Booth.')
+  const startCamera = async () => {
+    setError(null)
+    setStarting(true)
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('unsupported')
       }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      })
+      streamRef.current = stream
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        await videoRef.current.play()
+      }
+      setCameraOn(true)
+      setUploaded(null)
+    } catch (e: unknown) {
+      const err = e as { name?: string; message?: string }
+      if (err.name === 'NotAllowedError') {
+        setError('Camera permission denied. Tap "Use a photo" instead.')
+      } else if (err.name === 'NotFoundError') {
+        setError('No camera found on this device.')
+      } else if (err.message === 'unsupported' || !window.isSecureContext) {
+        setError('Camera needs a secure (HTTPS) page. Try "Use a photo" instead.')
+      } else {
+        setError('Camera unavailable. Try "Use a photo" instead.')
+      }
+    } finally {
+      setStarting(false)
     }
-    start()
-    return () => {
-      if (stream) stream.getTracks().forEach(t => t.stop())
-    }
+  }
+
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach(t => t.stop())
+    streamRef.current = null
+    setCameraOn(false)
   }, [])
 
+  useEffect(() => () => stopCamera(), [stopCamera])
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      setUploaded(ev.target?.result as string)
+      stopCamera()
+      setError(null)
+    }
+    reader.readAsDataURL(file)
+  }
+
   const snap = () => {
-    const v = videoRef.current; const c = canvasRef.current
-    if (!v || !c) return
-    c.width = v.videoWidth; c.height = v.videoHeight
+    const c = canvasRef.current
+    if (!c) return
     const ctx = c.getContext('2d')
     if (!ctx) return
-    ctx.filter = PB_FILTERS[filter].css
-    ctx.translate(c.width, 0)
-    ctx.scale(-1, 1)
-    ctx.drawImage(v, 0, 0)
-    setSnapshot(c.toDataURL('image/jpeg', 0.92))
+
+    if (cameraOn && videoRef.current && videoRef.current.videoWidth > 0) {
+      const v = videoRef.current
+      c.width = v.videoWidth; c.height = v.videoHeight
+      ctx.save()
+      ctx.filter = PB_FILTERS[filter].css
+      ctx.translate(c.width, 0); ctx.scale(-1, 1)
+      ctx.drawImage(v, 0, 0)
+      ctx.restore()
+      setSnapshot(c.toDataURL('image/jpeg', 0.92))
+      return
+    }
+    if (uploaded) {
+      const img = new Image()
+      img.onload = () => {
+        c.width = img.naturalWidth; c.height = img.naturalHeight
+        ctx.save()
+        ctx.filter = PB_FILTERS[filter].css
+        ctx.drawImage(img, 0, 0)
+        ctx.restore()
+        setSnapshot(c.toDataURL('image/jpeg', 0.92))
+      }
+      img.src = uploaded
+    }
   }
+
+  const reset = () => {
+    setSnapshot(null)
+  }
+
+  const hasSource = cameraOn || !!uploaded
+  const canSnap = hasSource && !snapshot
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
       <div style={{ width: '100%', aspectRatio: '4/3', background: '#000', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
         {snapshot ? (
           <img src={snapshot} alt="snapshot" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : uploaded ? (
+          <img src={uploaded} alt="uploaded" style={{
+            width: '100%', height: '100%', objectFit: 'cover',
+            filter: PB_FILTERS[filter].css,
+          }} />
         ) : (
-          <video ref={videoRef} playsInline muted style={{
+          <video ref={videoRef} playsInline muted autoPlay style={{
             width: '100%', height: '100%', objectFit: 'cover',
             filter: PB_FILTERS[filter].css, transform: 'scaleX(-1)',
+            opacity: cameraOn ? 1 : 0,
           }} />
         )}
-        {error && (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, textAlign: 'center', fontSize: 13 }}>
-            {error}
+        {!hasSource && !snapshot && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(135deg,#1f1147 0%,#9d174d 100%)',
+            color: '#fff', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 12, padding: 20, textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 48 }}>📸</div>
+            <div style={{ fontSize: 14, fontWeight: 700 }}>Photo Booth</div>
+            <div style={{ fontSize: 11, opacity: 0.85, lineHeight: 1.4 }}>
+              {error ? error : 'Snap with your camera or pick a photo, then play with filters.'}
+            </div>
           </div>
         )}
       </div>
       <canvas ref={canvasRef} style={{ display: 'none' }} />
-      <div style={{ display: 'flex', gap: 8 }}>
+      <input ref={fileRef} type="file" accept="image/*" capture="user" onChange={handleUpload} style={{ display: 'none' }} />
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
         {snapshot ? (
           <>
-            <a href={snapshot} download="photobooth.jpg" style={{
-              background: '#2563eb', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 6,
-              fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'none',
-            }}>Download</a>
-            <button onClick={() => setSnapshot(null)} style={{
-              background: '#e5e7eb', color: '#111', border: 'none', padding: '8px 16px', borderRadius: 6,
-              fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            }}>Retake</button>
+            <a href={snapshot} download="photobooth.jpg" style={pbBtn('#2563eb', '#fff')}>⬇ Download</a>
+            <button onClick={reset} style={pbBtn('#e5e7eb', '#111')}>Retake</button>
           </>
         ) : (
-          <button onClick={snap} disabled={!!error} style={{
-            background: error ? '#9ca3af' : '#dc2626', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 20,
-            fontSize: 14, fontWeight: 700, cursor: error ? 'not-allowed' : 'pointer',
-          }}>📷 Snap</button>
+          <>
+            {!cameraOn && (
+              <button onClick={startCamera} disabled={starting} style={pbBtn('#dc2626', '#fff')}>
+                {starting ? 'Starting…' : '🎥 Start Camera'}
+              </button>
+            )}
+            <button onClick={() => fileRef.current?.click()} style={pbBtn('#1f2937', '#fff')}>
+              🖼 Use a Photo
+            </button>
+            {canSnap && (
+              <button onClick={snap} style={pbBtn('#dc2626', '#fff')}>📷 Snap</button>
+            )}
+            {cameraOn && (
+              <button onClick={stopCamera} style={pbBtn('#e5e7eb', '#111')}>Stop</button>
+            )}
+          </>
         )}
       </div>
+
       <div style={{ width: '100%', overflowX: 'auto', display: 'flex', gap: 6, paddingBottom: 4 }}>
         {PB_FILTERS.map((f, i) => (
           <button key={f.name} onClick={() => setFilter(i)} style={{
@@ -1835,6 +1924,13 @@ export function PhotoBoothContent() {
       </div>
     </div>
   )
+}
+
+function pbBtn(bg: string, fg: string): React.CSSProperties {
+  return {
+    background: bg, color: fg, border: 'none', padding: '9px 16px', borderRadius: 20,
+    fontSize: 13, fontWeight: 700, cursor: 'pointer', textDecoration: 'none', display: 'inline-block',
+  }
 }
 
 /* ========== Translate ========== */
@@ -1941,191 +2037,326 @@ const selStyle: React.CSSProperties = {
   background: '#fff', fontSize: 14, outline: 'none',
 }
 
-/* ========== Resume ========== */
+/* ========== Resume — editorial / magazine style ========== */
+
+const PAPER = '#f3eee1'
+const INK = '#1a1a1a'
+const ACCENT = '#b8311a'
+const FADE = '#9a9285'
+const SERIF = 'Georgia, "Times New Roman", "Cormorant Garamond", serif'
+const MONO = '"IBM Plex Mono", "JetBrains Mono", "Courier New", monospace'
 
 export function ResumeContent() {
-  const initials = about.name.split(' ').map(n => n[0]).join('')
   return (
     <div style={{
-      margin: -14, padding: 0, background: '#0f172a', color: '#e2e8f0',
-      minHeight: 'calc(100% + 28px)', fontFamily: '-apple-system, "Helvetica Neue", sans-serif',
+      margin: -14, padding: 0, background: PAPER, color: INK,
+      minHeight: 'calc(100% + 28px)',
+      fontFamily: '-apple-system, "Helvetica Neue", sans-serif',
+      position: 'relative', overflow: 'hidden',
     }}>
-      {/* Header card */}
+      {/* Faint grid texture for the "paper" feel */}
       <div style={{
-        background: 'linear-gradient(135deg,#1e293b 0%,#0f172a 60%,#1f1147 100%)',
-        padding: '24px 18px 22px',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-        position: 'relative', overflow: 'hidden',
-      }}>
+        position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.06,
+        backgroundImage: 'linear-gradient(0deg, transparent 23px, #000 24px), linear-gradient(90deg, transparent 23px, #000 24px)',
+        backgroundSize: '24px 24px',
+      }} />
+
+      {/* MASTHEAD ============================================== */}
+      <div style={{ padding: '22px 18px 8px', position: 'relative' }}>
         <div style={{
-          position: 'absolute', top: -30, right: -30, width: 180, height: 180, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(251,191,36,0.18), transparent 70%)',
-        }} />
-        <div style={{
-          width: 64, height: 64, borderRadius: '50%',
-          background: 'linear-gradient(135deg,#fbbf24,#f59e0b)',
-          color: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 24, fontWeight: 800, marginBottom: 10,
-          boxShadow: '0 2px 12px rgba(251,191,36,0.4)',
-        }}>{initials}</div>
-        <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>{about.name}</div>
-        <div style={{ fontSize: 13, color: '#fbbf24', marginTop: 2, fontWeight: 600 }}>{about.role}</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
-          <Chip>📍 {about.location}</Chip>
-          <Chip>📧 {about.email}</Chip>
-          <Chip>📱 {about.phone}</Chip>
+          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
+          borderBottom: `2px solid ${INK}`, paddingBottom: 6,
+        }}>
+          <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 3, textTransform: 'uppercase', color: INK }}>
+            Issue №01 — 2026
+          </div>
+          <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 2, color: FADE }}>
+            Gwalior · MP
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-          <a href={about.github} target="_blank" rel="noopener noreferrer" style={resumeBtn('#fff', '#0f172a')}>GitHub</a>
-          <a href={about.linkedin} target="_blank" rel="noopener noreferrer" style={resumeBtn('#0a66c2', '#fff')}>LinkedIn</a>
-          <a href={`mailto:${about.email}`} style={resumeBtn('#fbbf24', '#0f172a')}>Email</a>
+
+        <h1 style={{
+          fontFamily: SERIF, fontWeight: 700, fontStyle: 'italic',
+          fontSize: 46, lineHeight: 0.95, letterSpacing: -1,
+          margin: '14px 0 4px 0', color: INK,
+        }}>
+          Arman <span style={{ color: ACCENT }}>Singh</span><br />Tomar.
+        </h1>
+        <div style={{
+          fontFamily: MONO, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase',
+          color: INK, marginTop: 8,
+        }}>
+          Full-stack developer <span style={{ color: ACCENT }}>×</span> UI designer
+        </div>
+
+        {/* Pull quote */}
+        <div style={{
+          margin: '20px 0 4px',
+          fontFamily: SERIF, fontStyle: 'italic', fontSize: 18, lineHeight: 1.4,
+          color: INK, position: 'relative', paddingLeft: 14,
+        }}>
+          <span style={{
+            position: 'absolute', left: 0, top: 4, bottom: 4, width: 3, background: ACCENT,
+          }} />
+          “I build the boring back-end <i>and</i> the pixel-perfect front.
+          Ship things people actually open.”
         </div>
       </div>
 
-      {/* Stats strip */}
-      <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', background: '#0b1220' }}>
-        <Stat label="Companies" value="5+" />
-        <Stat label="Clients" value="37+" />
-        <Stat label="Years" value="3+" />
+      {/* RUNNING HEADER ======================================== */}
+      <RunHead n="00" label="Standfirst" />
+      <div style={{ padding: '0 18px 18px', fontFamily: SERIF, fontSize: 14, lineHeight: 1.55, color: INK }}>
+        Three years in: 37+ shipped clients, four agencies, a college platform,
+        and a half-dozen production stacks. Currently building board-game commerce
+        infrastructure with Docker, Kubernetes & Redis at <b>Kheeladi</b>.
       </div>
 
-      {/* Experience timeline */}
-      <Section title="Experience" icon="💼">
-        <div style={{ position: 'relative', paddingLeft: 22 }}>
-          <div style={{ position: 'absolute', left: 6, top: 4, bottom: 0, width: 2, background: 'linear-gradient(180deg,#fbbf24,rgba(251,191,36,0.15))' }} />
-          {experience.map((e, i) => (
-            <div key={i} style={{ position: 'relative', marginBottom: 18 }}>
-              <div style={{
-                position: 'absolute', left: -22, top: 2, width: 14, height: 14, borderRadius: '50%',
-                background: e.current ? '#22c55e' : '#fbbf24',
-                boxShadow: e.current ? '0 0 0 4px rgba(34,197,94,0.2)' : '0 0 0 4px rgba(251,191,36,0.15)',
-              }} />
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>
-                {e.company}{' '}
-                {e.current && <span style={{ fontSize: 9, background: '#22c55e', color: '#0f172a', padding: '1px 6px', borderRadius: 4, marginLeft: 4, fontWeight: 700, letterSpacing: 0.5 }}>NOW</span>}
-              </div>
-              <div style={{ fontSize: 12, color: '#fbbf24', fontWeight: 600 }}>{e.role}</div>
-              <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
-                {e.start} – {e.end} · {e.location}
-              </div>
-              <ul style={{ margin: '6px 0 0 0', padding: '0 0 0 16px', fontSize: 12, color: '#cbd5e1', lineHeight: 1.5 }}>
-                {e.bullets.map((b, j) => <li key={j} style={{ marginBottom: 2 }}>{b}</li>)}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      {/* Projects */}
-      <Section title="Projects" icon="🚀">
-        {featuredProjects.map((p, i) => (
+      {/* WORK ================================================== */}
+      <RunHead n="01" label="Selected work" />
+      <div style={{ padding: '0 18px 8px' }}>
+        {experience.map((e, i) => (
           <div key={i} style={{
-            background: '#1e293b', borderRadius: 10, padding: 12, marginBottom: 10,
-            border: '1px solid rgba(251,191,36,0.2)',
+            display: 'grid', gridTemplateColumns: '52px 1fr',
+            gap: 12, padding: '14px 0',
+            borderTop: i === 0 ? `1px solid ${INK}` : `1px solid rgba(0,0,0,0.12)`,
           }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{p.name}</div>
-            <div style={{ fontSize: 10, color: '#fbbf24', marginTop: 2, fontWeight: 600 }}>{p.stack}</div>
-            <ul style={{ margin: '6px 0 0 0', padding: '0 0 0 16px', fontSize: 12, color: '#cbd5e1', lineHeight: 1.5 }}>
-              {p.bullets.map((b, j) => <li key={j}>{b}</li>)}
-            </ul>
+            {/* Year rail */}
+            <div style={{ fontFamily: MONO, fontSize: 10, color: FADE, paddingTop: 3, lineHeight: 1.4 }}>
+              {e.start.replace(/^[A-Za-z]+ /, '')}<br />
+              <span style={{ color: e.current ? ACCENT : FADE, fontWeight: e.current ? 700 : 400 }}>
+                {e.end === 'Present' ? 'now' : e.end.replace(/^[A-Za-z]+ /, '')}
+              </span>
+            </div>
+            {/* Content */}
+            <div>
+              <div style={{
+                display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: 6,
+              }}>
+                {e.freelance ? (
+                  <>
+                    <span style={{ fontFamily: SERIF, fontSize: 20, fontStyle: 'italic', fontWeight: 700, color: INK }}>
+                      {e.role}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 700, color: INK, lineHeight: 1.1 }}>
+                      {e.company}
+                    </span>
+                    {e.current && (
+                      <span style={{
+                        fontFamily: MONO, fontSize: 9, letterSpacing: 1.5, textTransform: 'uppercase',
+                        background: ACCENT, color: PAPER, padding: '2px 6px',
+                      }}>NOW</span>
+                    )}
+                  </>
+                )}
+              </div>
+              <div style={{
+                fontFamily: MONO, fontSize: 10, color: FADE, marginTop: 3,
+                textTransform: 'uppercase', letterSpacing: 1.5,
+              }}>
+                {e.freelance ? 'Independent' : e.role} · {e.location}
+              </div>
+              <div style={{ fontFamily: SERIF, fontSize: 13.5, lineHeight: 1.55, color: INK, marginTop: 8 }}>
+                {e.bullets.map((b, j) => (
+                  <div key={j} style={{
+                    position: 'relative', paddingLeft: 16, marginBottom: 4,
+                  }}>
+                    <span style={{
+                      position: 'absolute', left: 0, top: 8, width: 8, height: 1, background: ACCENT,
+                    }} />
+                    {b}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         ))}
-      </Section>
+      </div>
 
-      {/* Skills */}
-      <Section title="Skills" icon="⚡">
-        {skills.map(cat => (
-          <div key={cat.category} style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, marginBottom: 6, letterSpacing: 0.8 }}>{cat.category}</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-              {cat.items.map(it => (
-                <span key={it} style={{
-                  background: 'rgba(251,191,36,0.12)', color: '#fbbf24',
-                  padding: '4px 9px', borderRadius: 12, fontSize: 11, fontWeight: 600,
-                  border: '1px solid rgba(251,191,36,0.25)',
-                }}>{it}</span>
+      {/* PROJECT ============================================== */}
+      <RunHead n="02" label="Featured project" />
+      <div style={{ padding: '0 18px 18px' }}>
+        {featuredProjects.map((p, i) => (
+          <div key={i} style={{ borderTop: `1px solid ${INK}`, paddingTop: 12 }}>
+            <div style={{ fontFamily: SERIF, fontStyle: 'italic', fontSize: 22, color: INK, lineHeight: 1.05 }}>
+              {p.name}.
+            </div>
+            <div style={{ fontFamily: MONO, fontSize: 10, color: FADE, textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4 }}>
+              {p.stack}
+            </div>
+            <div style={{ fontFamily: SERIF, fontSize: 13.5, lineHeight: 1.55, color: INK, marginTop: 8 }}>
+              {p.bullets.map((b, j) => (
+                <div key={j} style={{ position: 'relative', paddingLeft: 16, marginBottom: 4 }}>
+                  <span style={{ position: 'absolute', left: 0, top: 8, width: 8, height: 1, background: ACCENT }} />
+                  {b}
+                </div>
               ))}
             </div>
           </div>
         ))}
-      </Section>
+      </div>
 
-      {/* Education */}
-      <Section title="Education" icon="🎓">
-        <div style={{
-          background: '#1e293b', borderRadius: 10, padding: 12,
-          border: '1px solid rgba(255,255,255,0.08)',
-        }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{about.education.school}</div>
-          <div style={{ fontSize: 12, color: '#fbbf24', marginTop: 2 }}>{about.education.degree}</div>
-          <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>
-            Expected {about.education.expected} · {about.education.location}
-          </div>
-        </div>
-      </Section>
-
-      {/* Achievements */}
-      <Section title="Achievements" icon="🏆">
-        {achievements.map((a, i) => (
-          <div key={i} style={{
-            display: 'flex', gap: 8, alignItems: 'flex-start', padding: '6px 0',
-            borderBottom: i === achievements.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.06)',
+      {/* CRAFT (skills as inline editorial) ==================== */}
+      <RunHead n="03" label="Craft" />
+      <div style={{ padding: '0 18px 18px' }}>
+        {skills.map((cat, idx) => (
+          <div key={cat.category} style={{
+            paddingTop: 10, paddingBottom: 10,
+            borderTop: idx === 0 ? `1px solid ${INK}` : '1px solid rgba(0,0,0,0.12)',
           }}>
-            <span style={{ color: '#22c55e', flex: 'none', fontSize: 14 }}>✓</span>
-            <span style={{ fontSize: 12, color: '#cbd5e1', lineHeight: 1.5 }}>{a}</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+              <div style={{
+                fontFamily: MONO, fontSize: 9, color: ACCENT, textTransform: 'uppercase',
+                letterSpacing: 2, flex: 'none', width: 64, paddingTop: 4,
+              }}>{String(idx + 1).padStart(2, '0')} ·</div>
+              <div>
+                <div style={{ fontFamily: SERIF, fontSize: 14, fontWeight: 700, color: INK, letterSpacing: 0.3 }}>
+                  {cat.category}
+                </div>
+                <div style={{ fontFamily: SERIF, fontSize: 13, color: INK, lineHeight: 1.5, marginTop: 2 }}>
+                  {cat.items.join(' / ')}
+                </div>
+              </div>
+            </div>
           </div>
         ))}
-      </Section>
-
-      <div style={{ padding: '18px 16px 24px', textAlign: 'center', fontSize: 10, color: '#64748b' }}>
-        <a href={about.resume} download style={{
-          display: 'inline-block', background: 'linear-gradient(135deg,#fbbf24,#f59e0b)', color: '#0f172a',
-          padding: '10px 24px', borderRadius: 20, fontSize: 13, fontWeight: 700,
-          textDecoration: 'none', boxShadow: '0 4px 12px rgba(251,191,36,0.3)',
-        }}>⬇ Download PDF Resume</a>
-        <div style={{ marginTop: 14, fontStyle: 'italic' }}>Open to opportunities · Available May 2026</div>
       </div>
-    </div>
-  )
-}
 
-function Chip({ children }: { children: React.ReactNode }) {
-  return (
-    <span style={{
-      background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
-      padding: '3px 8px', borderRadius: 10, fontSize: 10, color: '#e2e8f0',
-    }}>{children}</span>
-  )
-}
+      {/* STUDY ================================================= */}
+      <RunHead n="04" label="Study" />
+      <div style={{ padding: '0 18px 18px' }}>
+        <div style={{ borderTop: `1px solid ${INK}`, paddingTop: 12 }}>
+          <div style={{ fontFamily: SERIF, fontStyle: 'italic', fontSize: 20, color: INK, lineHeight: 1.15 }}>
+            {about.education.school}.
+          </div>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: FADE, textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 4 }}>
+            {about.education.degree}
+          </div>
+          <div style={{ fontFamily: SERIF, fontSize: 13, color: INK, marginTop: 6 }}>
+            <span style={{ color: ACCENT, fontStyle: 'italic' }}>Graduating</span> {about.education.expected} · {about.education.location}
+          </div>
+        </div>
+      </div>
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ flex: 1, padding: '14px 8px', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
-      <div style={{ fontSize: 22, fontWeight: 800, color: '#fbbf24', lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 9, color: '#94a3b8', textTransform: 'uppercase', marginTop: 4, letterSpacing: 0.8 }}>{label}</div>
-    </div>
-  )
-}
-
-function Section({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
-  return (
-    <div style={{ padding: '16px 16px 4px' }}>
+      {/* NUMBERS (the metrics, redone as a typographic line) === */}
+      <RunHead n="05" label="By the numbers" />
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12,
+        padding: '0 18px 22px',
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0,
+        borderTop: `1px solid ${INK}`, borderBottom: `1px solid ${INK}`,
       }}>
-        <span style={{ fontSize: 18 }}>{icon}</span>
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#fff', letterSpacing: 0.5 }}>{title}</h3>
-        <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,rgba(251,191,36,0.4),transparent)' }} />
+        {[
+          { k: '37+', v: 'clients shipped' },
+          { k: '05+', v: 'internships' },
+          { k: '03+', v: 'years building' },
+        ].map((n, i) => (
+          <div key={i} style={{
+            padding: '14px 6px', textAlign: 'center',
+            borderLeft: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.12)',
+          }}>
+            <div style={{ fontFamily: SERIF, fontStyle: 'italic', fontSize: 32, lineHeight: 1, color: ACCENT, fontWeight: 700 }}>
+              {n.k}
+            </div>
+            <div style={{ fontFamily: MONO, fontSize: 8.5, letterSpacing: 1.5, textTransform: 'uppercase', marginTop: 6, color: INK }}>
+              {n.v}
+            </div>
+          </div>
+        ))}
       </div>
-      {children}
+
+      {/* WINS ================================================== */}
+      <RunHead n="06" label="Wins" />
+      <div style={{ padding: '0 18px 18px' }}>
+        {achievements.map((a, i) => (
+          <div key={i} style={{
+            display: 'grid', gridTemplateColumns: '24px 1fr', gap: 6,
+            padding: '10px 0',
+            borderTop: i === 0 ? `1px solid ${INK}` : '1px solid rgba(0,0,0,0.12)',
+          }}>
+            <div style={{ fontFamily: MONO, fontSize: 11, color: ACCENT, fontWeight: 700 }}>
+              0{i + 1}
+            </div>
+            <div style={{ fontFamily: SERIF, fontSize: 14, lineHeight: 1.5, color: INK }}>
+              {a}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* CONTACT ============================================== */}
+      <RunHead n="07" label="Get in touch" />
+      <div style={{ padding: '0 18px 12px' }}>
+        <div style={{ borderTop: `1px solid ${INK}`, paddingTop: 14 }}>
+          <ContactRow label="Email"   value={about.email}    href={`mailto:${about.email}`} />
+          <ContactRow label="Phone"   value={about.phone}    href={`tel:${about.phone.replace(/\s/g, '')}`} />
+          <ContactRow label="GitHub"  value="@ArmanTomar4"   href={about.github} external />
+          <ContactRow label="LinkedIn" value="/in/arman-tomar" href={about.linkedin} external />
+        </div>
+
+        <a href={about.resume} download style={{
+          display: 'block', marginTop: 18, textAlign: 'center',
+          background: INK, color: PAPER, padding: '14px 0',
+          fontFamily: MONO, fontSize: 11, letterSpacing: 3, textTransform: 'uppercase',
+          textDecoration: 'none', fontWeight: 700,
+          position: 'relative',
+        }}>
+          → Download the PDF
+        </a>
+      </div>
+
+      {/* COLOPHON ============================================= */}
+      <div style={{
+        margin: '0 18px', padding: '18px 0 24px',
+        borderTop: `1px solid ${INK}`,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+        fontFamily: MONO, fontSize: 9, letterSpacing: 1.5, color: FADE,
+        textTransform: 'uppercase',
+      }}>
+        <div>
+          Set in Georgia &<br />IBM Plex Mono.<br />
+          Hand-coded, no UI<br />libraries. Built in<br />Next.js + CSS.
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          Edition of one.<br />
+          <span style={{ color: ACCENT }}>{about.name}</span><br />
+          Gwalior, 2026.
+        </div>
+      </div>
     </div>
   )
 }
 
-function resumeBtn(bg: string, fg: string): React.CSSProperties {
-  return {
-    background: bg, color: fg,
-    padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700,
-    textDecoration: 'none', display: 'inline-block',
-  }
+function RunHead({ n, label }: { n: string; label: string }) {
+  return (
+    <div style={{
+      padding: '14px 18px 4px',
+      display: 'flex', alignItems: 'baseline', gap: 10,
+    }}>
+      <div style={{
+        fontFamily: MONO, fontSize: 11, color: ACCENT, fontWeight: 700, letterSpacing: 2,
+      }}>{n}</div>
+      <div style={{ flex: 1, height: 1, background: INK }} />
+      <div style={{
+        fontFamily: MONO, fontSize: 10, color: INK, letterSpacing: 3, textTransform: 'uppercase',
+      }}>{label}</div>
+    </div>
+  )
+}
+
+function ContactRow({ label, value, href, external }: { label: string; value: string; href: string; external?: boolean }) {
+  return (
+    <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined} style={{
+      display: 'grid', gridTemplateColumns: '76px 1fr 14px', alignItems: 'baseline',
+      padding: '9px 0', borderBottom: '1px solid rgba(0,0,0,0.12)',
+      textDecoration: 'none', color: INK,
+    }}>
+      <div style={{
+        fontFamily: MONO, fontSize: 9, letterSpacing: 2, color: FADE, textTransform: 'uppercase',
+      }}>{label}</div>
+      <div style={{ fontFamily: SERIF, fontSize: 14, color: INK }}>{value}</div>
+      <div style={{ fontFamily: MONO, fontSize: 11, color: ACCENT, textAlign: 'right' }}>↗</div>
+    </a>
+  )
 }
