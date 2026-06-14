@@ -373,6 +373,26 @@ export function PhotoBoothGlyph({ size = 28 }: GlyphProps) {
   )
 }
 
+export function ResumeGlyph({ size = 28 }: GlyphProps) {
+  return wrap(
+    size,
+    <>
+      <rect x="6" y="3" width="24" height="30" rx="1.5" fill="#fffdf4" stroke="#3a2710" strokeWidth="0.6" />
+      <polygon points="24,3 30,3 30,9" fill="#fef3c7" stroke="#3a2710" strokeWidth="0.6" />
+      <circle cx="13" cy="11" r="2.6" fill="#92400e" />
+      <rect x="9" y="15" width="9" height="1.4" fill="#3a2710" />
+      <rect x="9" y="17.5" width="6" height="1" fill="#6b4419" />
+      <line x1="20" y1="12" x2="27" y2="12" stroke="#92400e" strokeWidth="0.8" />
+      <line x1="20" y1="14.5" x2="27" y2="14.5" stroke="#92400e" strokeWidth="0.8" />
+      <line x1="20" y1="17" x2="25" y2="17" stroke="#92400e" strokeWidth="0.8" />
+      <line x1="9" y1="21" x2="27" y2="21" stroke="#d97706" strokeWidth="0.5" />
+      <line x1="9" y1="24" x2="27" y2="24" stroke="#bcbcbc" strokeWidth="0.4" />
+      <line x1="9" y1="26.5" x2="27" y2="26.5" stroke="#bcbcbc" strokeWidth="0.4" />
+      <line x1="9" y1="29" x2="22" y2="29" stroke="#bcbcbc" strokeWidth="0.4" />
+    </>
+  )
+}
+
 export function TranslateGlyph({ size = 28 }: GlyphProps) {
   return wrap(
     size,
@@ -410,6 +430,7 @@ export const glyphs = {
   tictactoe: TicTacToeGlyph,
   photobooth: PhotoBoothGlyph,
   translate: TranslateGlyph,
+  resume: ResumeGlyph,
 } as const
 
 export type GlyphName = keyof typeof glyphs

@@ -101,3 +101,28 @@
   from { transform: rotate(-1.3deg); }
   to   { transform: rotate(1.3deg); }
 }
+
+/* Red notification badge — top-right */
+.ios-app-notif {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ff4040 0%, #c8181a 100%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+  box-shadow:
+    0 0 0 1.5px #fff,
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.3);
+  line-height: 1;
+}

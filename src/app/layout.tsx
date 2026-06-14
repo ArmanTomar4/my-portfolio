@@ -9,6 +9,7 @@ import "@/styles/ios/lockscreen.css";
 import "@/styles/ios/homescreen.css";
 import "@/styles/ios/appicon.css";
 import "@/styles/ios/appscreen.css";
+import "@/styles/ios/weather.css";
 
 export const metadata: Metadata = {
   title: "Arman Singh Tomar — Portfolio",

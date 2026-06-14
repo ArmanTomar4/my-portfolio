@@ -22,6 +22,7 @@ import {
   TicTacToeContent,
   PhotoBoothContent,
   TranslateContent,
+  ResumeContent,
 } from './iosAppContent'
 
 interface AppScreenProps {
@@ -83,6 +84,7 @@ function AppContent({ app }: { app: IosAppDefinition }) {
     case 'tictactoe':   return <TicTacToeContent />
     case 'photobooth':  return <PhotoBoothContent />
     case 'translate':   return <TranslateContent />
+    case 'resume':      return <ResumeContent />
     default:            return <StubContent app={app} />
   }
 }

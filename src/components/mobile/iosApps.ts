@@ -24,6 +24,7 @@ export type IosAppKind =
   | 'tictactoe'
   | 'photobooth'
   | 'translate'
+  | 'resume'
 
 export interface IosAppDefinition {
   id: string
@@ -35,19 +36,22 @@ export interface IosAppDefinition {
   /** title bar text inside the app */
   title?: string
   kind: IosAppKind
+  /** number shown in a red notification badge in the top-right of the icon */
+  badge?: number
 }
 
 export const iosAppsPage1: IosAppDefinition[] = [
-  { id: 'messages-x', label: 'Messages', glyph: 'messages', from: '#a8e063', to: '#1f7a1f', kind: 'messages',  title: 'Messages' },
+  { id: 'messages-x', label: 'Messages', glyph: 'messages', from: '#a8e063', to: '#1f7a1f', kind: 'messages',  title: 'Messages', badge: 3 },
   { id: 'calendar',   label: 'Calendar', glyph: 'calendar', from: '#f9fafb', to: '#d1d5db', kind: 'calendar',  title: 'Calendar' },
   { id: 'photos',     label: 'Photos',   glyph: 'photos',   from: '#fefefe', to: '#cbd5e1', kind: 'photos',    title: 'Photos' },
   { id: 'camera',     label: 'Camera',   glyph: 'camera',   from: '#a1a1aa', to: '#27272a', kind: 'camera',    title: 'Camera' },
   { id: 'weather',    label: 'Weather',  glyph: 'weather',  from: '#85c5ec', to: '#1a73a8', kind: 'weather',   title: 'Weather' },
   { id: 'clock',      label: 'Clock',    glyph: 'clock',    from: '#1f2937', to: '#0a0a0a', kind: 'clock',     title: 'Clock' },
-  { id: 'mail',       label: 'Mail',     glyph: 'mail',     from: '#8acaff', to: '#1976d2', kind: 'mail',      title: 'Mail' },
+  { id: 'mail',       label: 'Mail',     glyph: 'mail',     from: '#8acaff', to: '#1976d2', kind: 'mail',      title: 'Mail', badge: 12 },
   { id: 'calculator', label: 'Calculator', glyph: 'calculator', from: '#3a3a3c', to: '#0a0a0a', kind: 'calculator', title: 'Calculator' },
-  { id: 'appstore',   label: 'App Store',  glyph: 'appstore',   from: '#7fbcff', to: '#0b3c8a', kind: 'appstore',   title: 'App Store' },
+  { id: 'appstore',   label: 'App Store',  glyph: 'appstore',   from: '#7fbcff', to: '#0b3c8a', kind: 'appstore',   title: 'App Store', badge: 5 },
   { id: 'music',      label: 'Music',      glyph: 'music',      from: '#ff7ab8', to: '#a8195d', kind: 'music',      title: 'Music' },
+  { id: 'resume',     label: 'Resume',     glyph: 'resume',     from: '#fef3c7', to: '#92400e', kind: 'resume',     title: 'Resume' },
 ]
 
 export const iosAppsPage2: IosAppDefinition[] = [
@@ -66,7 +70,7 @@ export const iosAppPages: IosAppDefinition[][] = [iosAppsPage1, iosAppsPage2]
 export const iosApps: IosAppDefinition[] = iosAppPages.flat()
 
 export const iosDock: IosAppDefinition[] = [
-  { id: 'phone',    label: 'Phone',    glyph: 'phone',    from: '#7ee87e', to: '#1f7a1f', kind: 'phone',    title: 'Phone' },
+  { id: 'phone',    label: 'Phone',    glyph: 'phone',    from: '#7ee87e', to: '#1f7a1f', kind: 'phone',    title: 'Phone', badge: 2 },
   { id: 'safari',   label: 'Safari',   glyph: 'safari',   from: '#7fbcff', to: '#0b3c8a', kind: 'safari',   title: 'Safari' },
   { id: 'notes',    label: 'Notes',    glyph: 'notes',    from: '#fff1a8', to: '#f1c25b', kind: 'notes',    title: 'Notes' },
   { id: 'contacts', label: 'Contacts', glyph: 'contacts', from: '#f5e6c0', to: '#bc965a', kind: 'contacts', title: 'Contacts' },

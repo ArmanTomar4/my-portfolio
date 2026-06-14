@@ -52,6 +52,11 @@ export default function AppIcon({ app, onOpen, onLongPress }: AppIconProps) {
     >
       <div className="ios-app-tile" style={style}>
         <div className="ios-app-badge">−</div>
+        {app.badge !== undefined && app.badge > 0 && (
+          <div className="ios-app-notif" aria-label={`${app.badge} notifications`}>
+            {app.badge > 99 ? '99+' : app.badge}
+          </div>
+        )}
         <div className="ios-app-glyph">
           <Glyph size={32} />
         </div>

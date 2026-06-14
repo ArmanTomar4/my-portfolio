@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { projects } from '@/data/projects'
+import { about, experience, featuredProjects, achievements } from '@/data/about'
+import { skills } from '@/data/skills'
 
 /* ========== Photos ========== */
 
@@ -155,6 +157,212 @@ const WMO: Record<number, { label: string; icon: string; night: string }> = {
 
 const DEFAULT_LOC = { lat: 26.2183, lon: 78.1828, name: 'Gwalior' }
 
+type WeatherKind = 'clear-day' | 'clear-night' | 'cloudy' | 'rain' | 'snow' | 'storm' | 'fog'
+
+function weatherKind(code: number | undefined, isNight: boolean): WeatherKind {
+  if (code === undefined) return isNight ? 'clear-night' : 'clear-day'
+  if (code === 0) return isNight ? 'clear-night' : 'clear-day'
+  if (code <= 3) return 'cloudy'
+  if (code === 45 || code === 48) return 'fog'
+  if (code >= 51 && code <= 67) return 'rain'
+  if (code >= 71 && code <= 77) return 'snow'
+  if (code >= 80 && code <= 82) return 'rain'
+  if (code === 85 || code === 86) return 'snow'
+  if (code >= 95) return 'storm'
+  return 'cloudy'
+}
+
+function weatherGradient(k: WeatherKind): string {
+  switch (k) {
+    case 'clear-day':   return 'linear-gradient(180deg,#38bdf8 0%,#60a5fa 60%,#a5b4fc 100%)'
+    case 'clear-night': return 'linear-gradient(180deg,#0c1635 0%,#1e293b 60%,#334155 100%)'
+    case 'cloudy':      return 'linear-gradient(180deg,#64748b 0%,#94a3b8 60%,#cbd5e1 100%)'
+    case 'rain':        return 'linear-gradient(180deg,#334155 0%,#475569 60%,#64748b 100%)'
+    case 'snow':        return 'linear-gradient(180deg,#94a3b8 0%,#cbd5e1 60%,#e2e8f0 100%)'
+    case 'storm':       return 'linear-gradient(180deg,#0f172a 0%,#1e293b 60%,#334155 100%)'
+    case 'fog':         return 'linear-gradient(180deg,#94a3b8 0%,#cbd5e1 60%,#9ca3af 100%)'
+  }
+}
+
+function WeatherFx({ kind }: { kind: WeatherKind }) {
+  if (kind === 'clear-day') {
+    return (
+      <>
+        {/* Sun with rays */}
+        <div style={{
+          position: 'absolute', top: 24, right: 24, width: 80, height: 80, borderRadius: '50%',
+          background: 'radial-gradient(circle,#fff7c2 0%,#fbbf24 60%,rgba(251,191,36,0) 75%)',
+          boxShadow: '0 0 60px 20px rgba(251,191,36,0.45)',
+          animation: 'wx-sun-pulse 4s ease-in-out infinite', pointerEvents: 'none', zIndex: 0,
+        }} />
+        <SunRays />
+      </>
+    )
+  }
+  if (kind === 'clear-night') {
+    return (
+      <>
+        {/* Moon */}
+        <div style={{
+          position: 'absolute', top: 26, right: 26, width: 56, height: 56, borderRadius: '50%',
+          background: 'radial-gradient(circle at 32% 32%,#fff 0%,#e8eaf2 60%,#cbd5e1 100%)',
+          boxShadow: '0 0 50px 6px rgba(255,255,255,0.25), inset -12px -10px 0 rgba(0,0,0,0.18)',
+          pointerEvents: 'none', zIndex: 0,
+        }} />
+        {/* Stars */}
+        {Array.from({ length: 22 }).map((_, i) => {
+          const top = 8 + (i * 37) % 90
+          const left = 4 + (i * 53) % 92
+          const size = 1 + (i % 3)
+          return (
+            <div key={i} style={{
+              position: 'absolute', top: `${top}%`, left: `${left}%`,
+              width: size, height: size, borderRadius: '50%', background: '#fff',
+              opacity: 0.7, animation: `wx-twinkle ${2 + (i % 5) * 0.4}s ease-in-out infinite`,
+              animationDelay: `${(i * 0.17) % 2}s`, pointerEvents: 'none', zIndex: 0,
+            }} />
+          )
+        })}
+      </>
+    )
+  }
+  if (kind === 'cloudy') {
+    return (
+      <>
+        <Cloud top={30} left={-40} scale={1.4} speed={42} opacity={0.85} />
+        <Cloud top={90} left={120} scale={0.9} speed={56} opacity={0.6} />
+        <Cloud top={160} left={-80} scale={1.1} speed={48} opacity={0.7} />
+      </>
+    )
+  }
+  if (kind === 'rain') {
+    return (
+      <>
+        <Cloud top={20} left={-50} scale={1.4} speed={68} opacity={0.65} />
+        <Cloud top={80} left={140} scale={0.9} speed={80} opacity={0.45} />
+        <RainDrops density={45} />
+      </>
+    )
+  }
+  if (kind === 'snow') {
+    return (
+      <>
+        <Cloud top={30} left={-30} scale={1.2} speed={70} opacity={0.45} />
+        <SnowFlakes density={32} />
+      </>
+    )
+  }
+  if (kind === 'storm') {
+    return (
+      <>
+        <Cloud top={30} left={-30} scale={1.5} speed={80} opacity={0.5} />
+        <RainDrops density={60} />
+        <Lightning />
+      </>
+    )
+  }
+  if (kind === 'fog') {
+    return (
+      <>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} style={{
+            position: 'absolute', left: -100, top: 30 + i * 60, width: '160%', height: 40,
+            background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.5),transparent)',
+            animation: `wx-fog ${20 + i * 6}s linear infinite`,
+            animationDelay: `${i * 3}s`, pointerEvents: 'none', zIndex: 0,
+          }} />
+        ))}
+      </>
+    )
+  }
+  return null
+}
+
+function Cloud({ top, left, scale, speed, opacity }: { top: number; left: number; scale: number; speed: number; opacity: number }) {
+  return (
+    <div style={{
+      position: 'absolute', top, left, width: 100, height: 36,
+      transform: `scale(${scale})`, opacity, pointerEvents: 'none', zIndex: 0,
+      animation: `wx-cloud ${speed}s linear infinite`,
+    }}>
+      <div style={{ position: 'absolute', bottom: 0, left: 10, width: 80, height: 22, background: '#fff', borderRadius: 22 }} />
+      <div style={{ position: 'absolute', bottom: 8, left: 6, width: 36, height: 28, background: '#fff', borderRadius: '50%' }} />
+      <div style={{ position: 'absolute', bottom: 12, left: 30, width: 44, height: 32, background: '#fff', borderRadius: '50%' }} />
+      <div style={{ position: 'absolute', bottom: 8, left: 60, width: 30, height: 24, background: '#fff', borderRadius: '50%' }} />
+    </div>
+  )
+}
+
+function RainDrops({ density }: { density: number }) {
+  return (
+    <>
+      {Array.from({ length: density }).map((_, i) => {
+        const left = (i * 7.3) % 100
+        const delay = (i * 0.11) % 1.4
+        const duration = 0.6 + (i % 5) * 0.12
+        return (
+          <div key={i} style={{
+            position: 'absolute', top: -10, left: `${left}%`,
+            width: 1.5, height: 14, background: 'linear-gradient(180deg,transparent,#bae6fd)',
+            opacity: 0.7, animation: `wx-rain ${duration}s linear infinite`,
+            animationDelay: `${delay}s`, pointerEvents: 'none', zIndex: 0,
+          }} />
+        )
+      })}
+    </>
+  )
+}
+
+function SnowFlakes({ density }: { density: number }) {
+  return (
+    <>
+      {Array.from({ length: density }).map((_, i) => {
+        const left = (i * 11.3) % 100
+        const delay = (i * 0.21) % 4
+        const duration = 6 + (i % 5) * 1.6
+        const size = 3 + (i % 4)
+        return (
+          <div key={i} style={{
+            position: 'absolute', top: -10, left: `${left}%`,
+            width: size, height: size, borderRadius: '50%', background: '#fff',
+            opacity: 0.85, animation: `wx-snow ${duration}s linear infinite`,
+            animationDelay: `${delay}s`, pointerEvents: 'none', zIndex: 0,
+            boxShadow: '0 0 4px rgba(255,255,255,0.6)',
+          }} />
+        )
+      })}
+    </>
+  )
+}
+
+function Lightning() {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, background: '#fff',
+      animation: 'wx-flash 6s ease-in-out infinite',
+      opacity: 0, pointerEvents: 'none', zIndex: 1, mixBlendMode: 'screen',
+    }} />
+  )
+}
+
+function SunRays() {
+  return (
+    <div style={{
+      position: 'absolute', top: 0, right: 0, width: 220, height: 220,
+      transformOrigin: '85% 22%', animation: 'wx-rays 60s linear infinite',
+      pointerEvents: 'none', zIndex: 0,
+    }}>
+      {Array.from({ length: 12 }).map((_, i) => (
+        <div key={i} style={{
+          position: 'absolute', top: '22%', right: '15%', width: 110, height: 2,
+          background: 'linear-gradient(90deg,rgba(255,237,150,0.55),transparent)',
+          transform: `rotate(${i * 30}deg)`, transformOrigin: 'left center',
+        }} />
+      ))}
+    </div>
+  )
+}
+
 export function WeatherContent() {
   const [data, setData] = useState<WeatherData | null>(null)
   const [city, setCity] = useState(DEFAULT_LOC.name)
@@ -226,13 +434,16 @@ export function WeatherContent() {
   const wmo = (code: number) => WMO[code] ?? WMO[3]
   const current = data?.current
   const condition = current ? wmo(current.code) : null
+  const condKind = weatherKind(current?.code, isNight)
 
   return (
     <div style={{
       margin: -14, padding: 18, minHeight: '100%',
-      background: isNight ? 'linear-gradient(180deg,#0f172a 0%,#1e293b 60%,#334155 100%)' : 'linear-gradient(180deg,#38bdf8 0%,#60a5fa 60%,#a5b4fc 100%)',
+      background: weatherGradient(condKind),
       color: '#fff', display: 'flex', flexDirection: 'column', gap: 18,
+      position: 'relative', overflow: 'hidden',
     }}>
+      <WeatherFx kind={condKind} />
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 24, fontWeight: 300, letterSpacing: 0.5 }}>{city}</div>
         {data ? (
@@ -1728,4 +1939,193 @@ export function TranslateContent() {
 const selStyle: React.CSSProperties = {
   flex: 1, padding: '8px 10px', borderRadius: 8, border: '1px solid #d4d6da',
   background: '#fff', fontSize: 14, outline: 'none',
+}
+
+/* ========== Resume ========== */
+
+export function ResumeContent() {
+  const initials = about.name.split(' ').map(n => n[0]).join('')
+  return (
+    <div style={{
+      margin: -14, padding: 0, background: '#0f172a', color: '#e2e8f0',
+      minHeight: 'calc(100% + 28px)', fontFamily: '-apple-system, "Helvetica Neue", sans-serif',
+    }}>
+      {/* Header card */}
+      <div style={{
+        background: 'linear-gradient(135deg,#1e293b 0%,#0f172a 60%,#1f1147 100%)',
+        padding: '24px 18px 22px',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{
+          position: 'absolute', top: -30, right: -30, width: 180, height: 180, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(251,191,36,0.18), transparent 70%)',
+        }} />
+        <div style={{
+          width: 64, height: 64, borderRadius: '50%',
+          background: 'linear-gradient(135deg,#fbbf24,#f59e0b)',
+          color: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 24, fontWeight: 800, marginBottom: 10,
+          boxShadow: '0 2px 12px rgba(251,191,36,0.4)',
+        }}>{initials}</div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>{about.name}</div>
+        <div style={{ fontSize: 13, color: '#fbbf24', marginTop: 2, fontWeight: 600 }}>{about.role}</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+          <Chip>📍 {about.location}</Chip>
+          <Chip>📧 {about.email}</Chip>
+          <Chip>📱 {about.phone}</Chip>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+          <a href={about.github} target="_blank" rel="noopener noreferrer" style={resumeBtn('#fff', '#0f172a')}>GitHub</a>
+          <a href={about.linkedin} target="_blank" rel="noopener noreferrer" style={resumeBtn('#0a66c2', '#fff')}>LinkedIn</a>
+          <a href={`mailto:${about.email}`} style={resumeBtn('#fbbf24', '#0f172a')}>Email</a>
+        </div>
+      </div>
+
+      {/* Stats strip */}
+      <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', background: '#0b1220' }}>
+        <Stat label="Companies" value="5+" />
+        <Stat label="Clients" value="37+" />
+        <Stat label="Years" value="3+" />
+      </div>
+
+      {/* Experience timeline */}
+      <Section title="Experience" icon="💼">
+        <div style={{ position: 'relative', paddingLeft: 22 }}>
+          <div style={{ position: 'absolute', left: 6, top: 4, bottom: 0, width: 2, background: 'linear-gradient(180deg,#fbbf24,rgba(251,191,36,0.15))' }} />
+          {experience.map((e, i) => (
+            <div key={i} style={{ position: 'relative', marginBottom: 18 }}>
+              <div style={{
+                position: 'absolute', left: -22, top: 2, width: 14, height: 14, borderRadius: '50%',
+                background: e.current ? '#22c55e' : '#fbbf24',
+                boxShadow: e.current ? '0 0 0 4px rgba(34,197,94,0.2)' : '0 0 0 4px rgba(251,191,36,0.15)',
+              }} />
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>
+                {e.company}{' '}
+                {e.current && <span style={{ fontSize: 9, background: '#22c55e', color: '#0f172a', padding: '1px 6px', borderRadius: 4, marginLeft: 4, fontWeight: 700, letterSpacing: 0.5 }}>NOW</span>}
+              </div>
+              <div style={{ fontSize: 12, color: '#fbbf24', fontWeight: 600 }}>{e.role}</div>
+              <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
+                {e.start} – {e.end} · {e.location}
+              </div>
+              <ul style={{ margin: '6px 0 0 0', padding: '0 0 0 16px', fontSize: 12, color: '#cbd5e1', lineHeight: 1.5 }}>
+                {e.bullets.map((b, j) => <li key={j} style={{ marginBottom: 2 }}>{b}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {/* Projects */}
+      <Section title="Projects" icon="🚀">
+        {featuredProjects.map((p, i) => (
+          <div key={i} style={{
+            background: '#1e293b', borderRadius: 10, padding: 12, marginBottom: 10,
+            border: '1px solid rgba(251,191,36,0.2)',
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{p.name}</div>
+            <div style={{ fontSize: 10, color: '#fbbf24', marginTop: 2, fontWeight: 600 }}>{p.stack}</div>
+            <ul style={{ margin: '6px 0 0 0', padding: '0 0 0 16px', fontSize: 12, color: '#cbd5e1', lineHeight: 1.5 }}>
+              {p.bullets.map((b, j) => <li key={j}>{b}</li>)}
+            </ul>
+          </div>
+        ))}
+      </Section>
+
+      {/* Skills */}
+      <Section title="Skills" icon="⚡">
+        {skills.map(cat => (
+          <div key={cat.category} style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, marginBottom: 6, letterSpacing: 0.8 }}>{cat.category}</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+              {cat.items.map(it => (
+                <span key={it} style={{
+                  background: 'rgba(251,191,36,0.12)', color: '#fbbf24',
+                  padding: '4px 9px', borderRadius: 12, fontSize: 11, fontWeight: 600,
+                  border: '1px solid rgba(251,191,36,0.25)',
+                }}>{it}</span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </Section>
+
+      {/* Education */}
+      <Section title="Education" icon="🎓">
+        <div style={{
+          background: '#1e293b', borderRadius: 10, padding: 12,
+          border: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{about.education.school}</div>
+          <div style={{ fontSize: 12, color: '#fbbf24', marginTop: 2 }}>{about.education.degree}</div>
+          <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>
+            Expected {about.education.expected} · {about.education.location}
+          </div>
+        </div>
+      </Section>
+
+      {/* Achievements */}
+      <Section title="Achievements" icon="🏆">
+        {achievements.map((a, i) => (
+          <div key={i} style={{
+            display: 'flex', gap: 8, alignItems: 'flex-start', padding: '6px 0',
+            borderBottom: i === achievements.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.06)',
+          }}>
+            <span style={{ color: '#22c55e', flex: 'none', fontSize: 14 }}>✓</span>
+            <span style={{ fontSize: 12, color: '#cbd5e1', lineHeight: 1.5 }}>{a}</span>
+          </div>
+        ))}
+      </Section>
+
+      <div style={{ padding: '18px 16px 24px', textAlign: 'center', fontSize: 10, color: '#64748b' }}>
+        <a href={about.resume} download style={{
+          display: 'inline-block', background: 'linear-gradient(135deg,#fbbf24,#f59e0b)', color: '#0f172a',
+          padding: '10px 24px', borderRadius: 20, fontSize: 13, fontWeight: 700,
+          textDecoration: 'none', boxShadow: '0 4px 12px rgba(251,191,36,0.3)',
+        }}>⬇ Download PDF Resume</a>
+        <div style={{ marginTop: 14, fontStyle: 'italic' }}>Open to opportunities · Available May 2026</div>
+      </div>
+    </div>
+  )
+}
+
+function Chip({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{
+      background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
+      padding: '3px 8px', borderRadius: 10, fontSize: 10, color: '#e2e8f0',
+    }}>{children}</span>
+  )
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ flex: 1, padding: '14px 8px', textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ fontSize: 22, fontWeight: 800, color: '#fbbf24', lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 9, color: '#94a3b8', textTransform: 'uppercase', marginTop: 4, letterSpacing: 0.8 }}>{label}</div>
+    </div>
+  )
+}
+
+function Section({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
+  return (
+    <div style={{ padding: '16px 16px 4px' }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12,
+      }}>
+        <span style={{ fontSize: 18 }}>{icon}</span>
+        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#fff', letterSpacing: 0.5 }}>{title}</h3>
+        <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,rgba(251,191,36,0.4),transparent)' }} />
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function resumeBtn(bg: string, fg: string): React.CSSProperties {
+  return {
+    background: bg, color: fg,
+    padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+    textDecoration: 'none', display: 'inline-block',
+  }
 }

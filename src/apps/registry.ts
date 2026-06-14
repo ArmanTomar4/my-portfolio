@@ -20,6 +20,15 @@ export const apps: AppDefinition[] = [
     resizable: true,
   },
   {
+    id: 'resume',
+    label: 'Resume.doc',
+    icon: 'resume',
+    component: () => import('./Resume/App'),
+    defaultSize: { width: 720, height: 540 },
+    defaultPosition: { x: 100, y: 60 },
+    resizable: true,
+  },
+  {
     id: 'outlook',
     label: 'Contact',
     icon: 'outlook',
